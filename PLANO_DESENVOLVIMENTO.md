@@ -19,8 +19,8 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 0 | Preparação do ambiente (acréscimo) | Concluída (Docker adiado, item 0.3b) |
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
-| 3 | Autenticação | Aguardando validação |
-| 4 | Transações | Não iniciada |
+| 3 | Autenticação | Concluída |
+| 4 | Transações | Em andamento (entrega 1: Contas) |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
 | 7 | Relatórios e Configurações | Não iniciada |
@@ -199,7 +199,7 @@ Saída: documentos em `docs/`.
 
 **Contas (acréscimo).** A transação exige uma Conta, mas o rascunho não define sua gestão.
 
-- [ ] 4.1 CRUD de Conta, com tela em uma aba de Configurações.
+- [x] 4.1 CRUD de Conta, com tela em uma aba de Configurações. O saldo atual passa a somar as movimentações no item 4.6, e a exclusão de conta com movimentações é tratada no mesmo item.
 
 **Categorias**
 

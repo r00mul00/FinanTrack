@@ -127,6 +127,11 @@ input:-webkit-autofill:active {
     transition: background-color 86400s ease-out 0s;
 }
 
+/* Tabelas */
+.ft-grid {
+    background-color: transparent;
+}
+
 /* Barra superior */
 .ft-avatar-button {
     display: flex;

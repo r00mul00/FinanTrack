@@ -1,0 +1,125 @@
+@attribute [AllowAnonymous]
+@inject AccountApi Accounts
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-4">
+    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+        Contas onde suas receitas e despesas são movimentadas.
+    </MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="() => OpenDialogAsync(null)">
+        Nova conta
+    </MudButton>
+</div>
+
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar as contas.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
+else
+{
+    <MudDataGrid T="AccountResponse" Items="_accounts" Loading="_loading" Elevation="0" Hover="true"
+                 HorizontalScrollbar="true" Class="ft-grid">
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="Nome" />
+            <TemplateColumn T="AccountResponse" Title="Tipo" Sortable="false">
+                <CellTemplate>@context.Item.Type.Label()</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AccountResponse" Title="Saldo atual" Sortable="false">
+                <CellTemplate>@Money.Format(context.Item.CurrentBalance)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AccountResponse" Title="Situação" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.Archived)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">Arquivada</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success">Ativa</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AccountResponse" Title="Ações" Sortable="false">
+                <CellTemplate>
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
+                                       aria-label="@($"Editar {context.Item.Name}")"
+                                       OnClick="() => OpenDialogAsync(context.Item)" />
+                    </MudTooltip>
+                    <MudTooltip Text="Excluir">
+                        <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
+                                       aria-label="@($"Excluir {context.Item.Name}")"
+                                       OnClick="() => DeleteAsync(context.Item)" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Class="py-4">Nenhuma conta cadastrada. Crie a primeira em "Nova conta".</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+}
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private List<AccountResponse> _accounts = [];
+    private bool _loading = true;
+    private bool _loadFailed;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadFailed = false;
+        var accounts = await Accounts.ListAsync();
+        _accounts = accounts ?? [];
+        _loadFailed = accounts is null;
+        _loading = false;
+    }
+
+    private async Task OpenDialogAsync(AccountResponse? account)
+    {
+        var parameters = new DialogParameters<AccountDialog> { { x => x.Account, account } };
+        var title = account is null ? "Nova conta" : "Editar conta";
+        var dialog = await Dialogs.ShowAsync<AccountDialog>(title, parameters, Options);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task DeleteAsync(AccountResponse account)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir conta", $"Excluir a conta \"{account.Name}\"? Esta ação não pode ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await Accounts.DeleteAsync(account.Id);
+        if (result.Success)
+        {
+            Snackbar.Add("Conta excluída.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

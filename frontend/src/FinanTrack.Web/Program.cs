@@ -34,6 +34,7 @@ builder.Services.AddHttpClient(HttpClients.Api, client => client.BaseAddress = a
 builder.Services.AddHttpClient<ApiHealthService>(client => client.BaseAddress = apiBaseAddress);
 builder.Services.AddScoped<AuthApi>();
 builder.Services.AddScoped<UserApi>();
+builder.Services.AddScoped<AccountApi>();
 builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

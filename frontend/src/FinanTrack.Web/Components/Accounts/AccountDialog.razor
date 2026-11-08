@@ -1,0 +1,126 @@
+@attribute [AllowAnonymous]
+@inject AccountApi Accounts
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form" Spacing="4">
+            <LabeledTextField @bind-Value="_name" Label="Nome" RequiredError="Informe o nome da conta." MaxLength="80" />
+
+            <div class="ft-field">
+                <span class="ft-field-label">Tipo</span>
+                <MudSelect T="AccountType" @bind-Value="_type" Variant="Variant.Outlined" aria-label="Tipo da conta">
+                    @foreach (var type in Enum.GetValues<AccountType>())
+                    {
+                        <MudSelectItem Value="type">@type.Label()</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <div class="ft-field">
+                <span class="ft-field-label">Saldo inicial (R$)</span>
+                <MudNumericField T="decimal" @bind-Value="_initialBalance" Variant="Variant.Outlined"
+                                 Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                 HideSpinButtons="true" Immediate="true" />
+            </div>
+
+            @if (Account is not null)
+            {
+                <MudSwitch T="bool" @bind-Value="_archived" Color="Color.Primary" Label="Conta arquivada" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private string? _name;
+    private AccountType _type = AccountType.CHECKING;
+    private decimal _initialBalance;
+    private bool _archived;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nulo ao criar; preenchido ao editar.</summary>
+    [Parameter] public AccountResponse? Account { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Account is not null)
+        {
+            _name = Account.Name;
+            _type = Account.Type;
+            _initialBalance = Account.InitialBalance;
+            _archived = Account.Archived;
+        }
+    }
+
+    private bool HasChanges =>
+        (_name ?? "") != (Account?.Name ?? "")
+        || _type != (Account?.Type ?? AccountType.CHECKING)
+        || _initialBalance != (Account?.InitialBalance ?? 0m)
+        || _archived != (Account?.Archived ?? false);
+
+    private async Task CancelAsync()
+    {
+        if (HasChanges)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var request = new AccountRequest(_name!.Trim(), _type, _initialBalance, _archived);
+        var result = Account is null
+            ? await Accounts.CreateAsync(request)
+            : await Accounts.UpdateAsync(Account.Id, request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Account is null ? "Conta criada." : "Conta atualizada.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}
