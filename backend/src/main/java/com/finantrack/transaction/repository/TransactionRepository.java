@@ -3,6 +3,7 @@ package com.finantrack.transaction.repository;
 import com.finantrack.transaction.entity.Transaction;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,60 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             """;
 
     String REALIZED = "t.status = com.finantrack.transaction.entity.TransactionStatus.COMPLETED";
+
+    /** Regra de docs/06: receitas contam só depois de recebidas. */
+    String COUNTED_INCOME = """
+            (t.type = com.finantrack.transaction.entity.TransactionType.INCOME
+             and t.status = com.finantrack.transaction.entity.TransactionStatus.COMPLETED)
+            """;
+
+    /**
+     * Regra de docs/06: a despesa de cartão acontece na compra; o pagamento da
+     * fatura (INVOICE_PAYMENT) nunca conta, para não somar a compra duas vezes.
+     */
+    String COUNTED_EXPENSE = """
+            (t.type = com.finantrack.transaction.entity.TransactionType.EXPENSE and (
+                (t.kind = com.finantrack.transaction.entity.TransactionKind.STANDARD
+                 and t.status = com.finantrack.transaction.entity.TransactionStatus.COMPLETED)
+                or (t.kind = com.finantrack.transaction.entity.TransactionKind.CARD_INSTALLMENT
+                    and t.status <> com.finantrack.transaction.entity.TransactionStatus.CANCELED)))
+            """;
+
+    interface PeriodTotals {
+        BigDecimal getIncome();
+
+        BigDecimal getExpenses();
+    }
+
+    interface DailyTotals extends PeriodTotals {
+        LocalDate getDate();
+    }
+
+    interface CategoryTotal {
+        UUID getCategoryId();
+
+        BigDecimal getTotal();
+    }
+
+    @Query("select coalesce(sum(case when " + COUNTED_INCOME + " then t.amount else 0BD end), 0BD) as income,"
+            + " coalesce(sum(case when " + COUNTED_EXPENSE + " then t.amount else 0BD end), 0BD) as expenses"
+            + " from Transaction t"
+            + " where t.userId = :userId and t.transactionDate between :from and :to")
+    PeriodTotals sumPeriod(@Param("userId") UUID userId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select t.transactionDate as date,"
+            + " sum(case when " + COUNTED_INCOME + " then t.amount else 0BD end) as income,"
+            + " sum(case when " + COUNTED_EXPENSE + " then t.amount else 0BD end) as expenses"
+            + " from Transaction t"
+            + " where t.userId = :userId and t.transactionDate between :from and :to"
+            + " group by t.transactionDate")
+    List<DailyTotals> sumByDay(@Param("userId") UUID userId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select t.categoryId as categoryId, sum(t.amount) as total from Transaction t"
+            + " where t.userId = :userId and t.transactionDate between :from and :to and " + COUNTED_EXPENSE
+            + " group by t.categoryId order by sum(t.amount) desc")
+    List<CategoryTotal> sumExpensesByCategory(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 

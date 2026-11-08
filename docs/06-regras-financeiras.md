@@ -39,7 +39,9 @@ resultado = receitas - despesas
 
 **Por que o cartão entra assim:** a despesa acontece na compra. Se contássemos o pagamento da fatura, a mesma compra seria somada duas vezes. Por isso `INVOICE_PAYMENT` afeta o saldo, mas nunca os totais de despesa, categorias ou orçamentos.
 
-**Comparação:** o mês anterior usa as mesmas regras. Com período anterior zerado, a API retorna percentual nulo, e a interface mostra "sem base de comparação".
+**Comparação:** um mês completo é comparado com o mês anterior; qualquer outro período, com o mesmo número de dias imediatamente antes. As regras são as mesmas nos dois períodos. A variação usa o valor absoluto da base, pois o resultado anterior pode ser negativo. Com período anterior zerado, a API retorna percentual nulo, e a interface mostra "sem base de comparação".
+
+**Saldo total** não depende do período: é a posição atual das contas não arquivadas.
 
 ## Orçamentos
 
