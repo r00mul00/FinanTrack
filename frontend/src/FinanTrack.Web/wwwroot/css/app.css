@@ -348,6 +348,26 @@ input:-webkit-autofill:active {
     border-top: 1px solid rgba(166, 168, 188, 0.10);
 }
 
+/* Orçamentos */
+.ft-month-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ft-month-label {
+    min-width: 200px;
+    text-align: center;
+}
+
+.ft-budget-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    color: #A6A8BC;
+}
+
 /* Tabelas */
 .ft-grid {
     background-color: transparent;

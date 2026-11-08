@@ -21,8 +21,8 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
-| 5 | Dashboard | Aguardando validação |
-| 6 | Recursos financeiros | Não iniciada |
+| 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
+| 6 | Recursos financeiros | Em andamento (bloco 1: Orçamentos) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
@@ -250,10 +250,10 @@ Saída: documentos em `docs/`.
 
 **Orçamentos**
 
-- [ ] 6.1 Criar, editar e excluir orçamento mensal, com limite por categoria.
-- [ ] 6.2 Calcular valor utilizado e percentual consumido.
-- [ ] 6.3 Aplicar os estados: até 79% normal; de 80% a 100% alerta; acima de 100% excedido.
-- [ ] 6.4 Testes, incluindo os limites de 79%, 80%, 100% e acima de 100%.
+- [x] 6.1 Criar, editar e excluir orçamento mensal, com limite por categoria.
+- [x] 6.2 Calcular valor utilizado e percentual consumido.
+- [x] 6.3 Aplicar os estados: até 79% normal; de 80% a 100% alerta; acima de 100% excedido.
+- [x] 6.4 Testes, incluindo os limites de 79%, 80%, 100% e acima de 100%.
 
 **Metas financeiras**
 

@@ -83,6 +83,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     List<CategoryTotal> sumExpensesByCategory(@Param("userId") UUID userId, @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
+    /** Regra de docs/06: o orçamento mede o comprometido, por isso inclui pendentes. */
+    @Query("select t.categoryId as categoryId, sum(t.amount) as total from Transaction t"
+            + " where t.userId = :userId and t.transactionDate between :from and :to"
+            + " and t.type = com.finantrack.transaction.entity.TransactionType.EXPENSE"
+            + " and t.status <> com.finantrack.transaction.entity.TransactionStatus.CANCELED"
+            + " and t.kind <> com.finantrack.transaction.entity.TransactionKind.INVOICE_PAYMENT"
+            + " group by t.categoryId")
+    List<CategoryTotal> sumCommittedByCategory(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByAccountId(UUID accountId);

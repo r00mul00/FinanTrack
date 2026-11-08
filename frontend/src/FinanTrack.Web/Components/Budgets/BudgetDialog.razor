@@ -1,0 +1,114 @@
+@attribute [AllowAnonymous]
+@inject BudgetApi Budgets
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form" Spacing="4">
+            <div class="ft-field ft-budget-category">
+                <span class="ft-field-label">Categoria</span>
+                @if (Budget is not null)
+                {
+                    <MudTextField T="string" Value="Budget.CategoryName" Variant="Variant.Outlined" Disabled="true" />
+                }
+                else
+                {
+                    <MudSelect T="Guid?" @bind-Value="_categoryId" Variant="Variant.Outlined" aria-label="Categoria"
+                               Required="true" RequiredError="Selecione a categoria." ToStringFunc="CategoryName">
+                        @foreach (var category in Categories)
+                        {
+                            <MudSelectItem T="Guid?" Value="category.Id">@category.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </div>
+            <div class="ft-field ft-budget-limit">
+                <span class="ft-field-label">Limite do mês (R$)</span>
+                <MudNumericField T="decimal?" @bind-Value="_limit" Variant="Variant.Outlined"
+                                 Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                 HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o limite." />
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private Guid? _categoryId;
+    private decimal? _limit;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nulo ao criar; ao editar, só o limite muda.</summary>
+    [Parameter] public BudgetResponse? Budget { get; set; }
+    [Parameter] public string Month { get; set; } = "";
+    [Parameter] public IReadOnlyList<CategoryResponse> Categories { get; set; } = [];
+
+    protected override void OnInitialized() => _limit = Budget?.LimitAmount;
+
+    private string CategoryName(Guid? id) => Categories.FirstOrDefault(c => c.Id == id)?.Name ?? "";
+
+    private bool HasChanges => _categoryId is not null || _limit != Budget?.LimitAmount;
+
+    private async Task CancelAsync()
+    {
+        if (HasChanges)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = Budget is null
+            ? await Budgets.CreateAsync(new BudgetRequest(_categoryId!.Value, Month, _limit!.Value))
+            : await Budgets.UpdateLimitAsync(Budget.Id, _limit!.Value);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Budget is null ? "Orçamento criado." : "Limite atualizado.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

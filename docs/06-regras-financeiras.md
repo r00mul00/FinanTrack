@@ -59,7 +59,7 @@ Pendentes entram aqui porque orçamento mede o que está comprometido, diferente
 | De 80% a 100%, inclusive | `WARNING` |
 | Acima de 100% | `EXCEEDED` |
 
-A comparação usa o valor sem arredondar: 79,99% é normal.
+A comparação usa o valor sem arredondar: 79,99% é normal. O percentual exibido é truncado em duas casas, para 79,996% nunca aparecer como 80,00%.
 
 ## Metas
 
