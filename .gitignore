@@ -1,0 +1,30 @@
+# .NET
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+# Java / Maven
+target/
+*.class
+hs_err_pid*
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.user
+
+# Segredos e ambiente
+.env
+.env.*
+!.env.example
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

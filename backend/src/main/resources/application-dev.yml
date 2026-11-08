@@ -1,0 +1,17 @@
+# Desenvolvimento local: lê o arquivo .env da raiz do repositório.
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+finantrack:
+  security:
+    swagger-public: true
+  cors:
+    allowed-origins:
+      - http://localhost:5080

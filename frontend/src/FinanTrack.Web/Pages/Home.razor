@@ -1,0 +1,69 @@
+﻿@page "/"
+@inject ApiHealthService HealthService
+
+<PageTitle>Dashboard | FinanTrack</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-1">Dashboard</MudText>
+<MudText Typo="Typo.body1" Color="Color.Default" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Controle suas finanças. Conquiste seus objetivos.
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="0" Class="ft-card pa-5">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Status da API</MudText>
+
+            @if (_loading)
+            {
+                <MudSkeleton Width="60%" Height="32px" />
+            }
+            else
+            {
+                var online = _health == ApiHealth.Online;
+                <div class="d-flex align-center gap-2">
+                    <span class="ft-status-dot @(online ? "up" : "down")"></span>
+                    <MudText Typo="Typo.h6">@(online ? "Conectada" : "Indisponível")</MudText>
+                </div>
+                @if (!online)
+                {
+                    <MudText Typo="Typo.body2" Class="mt-1" Style="color: var(--mud-palette-text-secondary);">
+                        Não foi possível falar com o backend.
+                    </MudText>
+                }
+            }
+
+            <MudButton Class="mt-4"
+                       Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Rounded.Refresh"
+                       Disabled="_loading"
+                       OnClick="CheckAsync">
+                Verificar novamente
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="8">
+        <MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">Indicadores financeiros</MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                Saldo, receitas, despesas e gráficos aparecem aqui na Fase 5, calculados com os dados reais do usuário.
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool _loading = true;
+    private ApiHealth _health;
+
+    protected override Task OnInitializedAsync() => CheckAsync();
+
+    private async Task CheckAsync()
+    {
+        _loading = true;
+        _health = await HealthService.GetAsync();
+        _loading = false;
+    }
+}

@@ -1,0 +1,75 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="FinanTrackTheme.Default" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Color="Color.Transparent">
+        <MudIconButton Icon="@Icons.Material.Rounded.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       aria-label="Alternar menu"
+                       OnClick="ToggleDrawer" />
+        @if (!_drawerOpen)
+        {
+            <div class="ml-2"><Brand /></div>
+        }
+        <MudSpacer />
+
+        @* Pesquisa, notificações e perfil dependem das Fases 3 e 6; ficam desabilitados até lá. *@
+        <div class="d-none d-sm-flex flex-grow-1 justify-end mr-2">
+            <MudTextField T="string"
+                          Class="ft-search"
+                          Placeholder="Pesquisar"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Rounded.Search"
+                          Disabled="true" />
+        </div>
+        <MudTooltip Text="Notificações: disponível na Fase 6">
+            <MudIconButton Icon="@Icons.Material.Rounded.Notifications" Color="Color.Inherit" Disabled="true" aria-label="Notificações" />
+        </MudTooltip>
+        <MudTooltip Text="Perfil: disponível após o login (Fase 3)">
+            <MudAvatar Color="Color.Primary" Size="Size.Small" Class="ml-2">
+                <MudIcon Icon="@Icons.Material.Rounded.Person" Size="Size.Small" />
+            </MudAvatar>
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
+               ClipMode="DrawerClipMode.Never"
+               Elevation="0">
+        <div class="ft-drawer">
+            <div class="px-2"><Brand /></div>
+            <div class="ft-drawer-nav">
+                <NavMenu />
+            </div>
+            <div class="ft-drawer-footer">
+                <div>
+                    <MudText Typo="Typo.body2">Sem sessão</MudText>
+                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">Login na Fase 3</MudText>
+                </div>
+                <MudTooltip Text="Sair: disponível após o login (Fase 3)">
+                    <MudIconButton Icon="@Icons.Material.Rounded.Logout" Size="Size.Small" Disabled="true" aria-label="Sair" />
+                </MudTooltip>
+            </div>
+        </div>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}

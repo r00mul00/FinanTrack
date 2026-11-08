@@ -1,0 +1,11 @@
+# Testes usam um banco separado. Em CI, as variáveis vêm do ambiente.
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  datasource:
+    url: ${TEST_DB_URL}
+
+finantrack:
+  cors:
+    allowed-origins:
+      - http://localhost:5080

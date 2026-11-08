@@ -1,0 +1,5 @@
+# Produção: todos os valores vêm de variáveis de ambiente.
+# Frontend e API ficam na mesma origem, portanto o CORS não é liberado por padrão.
+finantrack:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
