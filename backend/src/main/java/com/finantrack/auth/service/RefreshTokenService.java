@@ -6,16 +6,11 @@ import com.finantrack.auth.repository.RefreshTokenRepository;
 import com.finantrack.common.config.FinanTrackProperties;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.InvalidRefreshTokenException;
+import com.finantrack.common.security.OpaqueTokens;
 import com.finantrack.user.entity.User;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RefreshTokenService {
 
-    private static final int TOKEN_BYTES = 32;
     private static final int MAX_USER_AGENT = 255;
 
     private final RefreshTokenRepository repository;
@@ -32,7 +26,6 @@ public class RefreshTokenService {
     private final Clock clock;
     private final Duration ttl;
     private final Duration reuseGrace;
-    private final SecureRandom random = new SecureRandom();
 
     public RefreshTokenService(RefreshTokenRepository repository, AccessTokenService accessTokenService,
             Clock clock, FinanTrackProperties properties) {
@@ -58,7 +51,7 @@ public class RefreshTokenService {
         if (rawToken == null || rawToken.isBlank()) {
             throw new InvalidRefreshTokenException();
         }
-        RefreshToken current = repository.findForUpdateByTokenHash(hash(rawToken))
+        RefreshToken current = repository.findForUpdateByTokenHash(OpaqueTokens.sha256(rawToken))
                 .orElseThrow(InvalidRefreshTokenException::new);
         Instant now = clock.instant();
 
@@ -87,16 +80,19 @@ public class RefreshTokenService {
         if (rawToken == null || rawToken.isBlank()) {
             return;
         }
-        repository.findByTokenHash(hash(rawToken))
+        repository.findByTokenHash(OpaqueTokens.sha256(rawToken))
                 .ifPresent(token -> repository.revokeFamily(token.getFamilyId(), clock.instant()));
     }
 
-    private String store(User user, UUID familyId, String userAgent) {
-        byte[] bytes = new byte[TOKEN_BYTES];
-        random.nextBytes(bytes);
-        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    /** Encerra todas as sessões do usuário, por exemplo ao redefinir a senha. */
+    @Transactional
+    public void revokeAllSessions(UUID userId) {
+        repository.revokeAllByUser(userId, clock.instant());
+    }
 
-        repository.save(new RefreshToken(user, familyId, hash(rawToken),
+    private String store(User user, UUID familyId, String userAgent) {
+        String rawToken = OpaqueTokens.generate();
+        repository.save(new RefreshToken(user, familyId, OpaqueTokens.sha256(rawToken),
                 clock.instant().plus(ttl), truncate(userAgent)));
         return rawToken;
     }
@@ -106,14 +102,5 @@ public class RefreshTokenService {
             return null;
         }
         return userAgent.length() <= MAX_USER_AGENT ? userAgent : userAgent.substring(0, MAX_USER_AGENT);
-    }
-
-    private String hash(String rawToken) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(rawToken.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 indisponível.", e);
-        }
     }
 }

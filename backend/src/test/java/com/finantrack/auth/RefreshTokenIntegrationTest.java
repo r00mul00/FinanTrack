@@ -13,6 +13,7 @@ import com.finantrack.user.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -60,8 +61,11 @@ class RefreshTokenIntegrationTest {
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        jdbcTemplate.update("delete from user_tokens");
         userRepository.deleteAll();
-        userRepository.save(new User("Ana", EMAIL, passwordEncoder.encode(PASSWORD)));
+        User user = new User("Ana", EMAIL, passwordEncoder.encode(PASSWORD));
+        user.markEmailVerified(Instant.now());
+        userRepository.save(user);
     }
 
     @Test

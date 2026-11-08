@@ -4,10 +4,20 @@ spring:
     import: optional:file:../.env[.properties]
   datasource:
     url: ${TEST_DB_URL}
+  mail:
+    host: localhost
+    port: 1
 
 finantrack:
+  frontend-url: http://localhost:5080
   jwt:
     secret: segredo-usado-somente-nos-testes-automatizados
+  mail:
+    from: testes@finantrack.local
+  # Limite alto: o teste específico define os próprios valores.
+  rate-limit:
+    ip-limit: 100000
+    email-limit: 100000
   cors:
     allowed-origins:
       - http://localhost:5080

@@ -19,7 +19,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 0 | Preparação do ambiente (acréscimo) | Concluída (Docker adiado, item 0.3b) |
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
-| 3 | Autenticação | Em andamento (entrega 2 de 4) |
+| 3 | Autenticação | Em andamento (entrega 3 de 4) |
 | 4 | Transações | Não iniciada |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
@@ -177,11 +177,10 @@ Saída: documentos em `docs/`.
 - [x] 3.5 Refresh Token com rotação e revogação; armazenar apenas o hash.
 - [x] 3.6 Detecção de reutilização de refresh token (acréscimo).
 - [x] 3.7 Logout com invalidação do refresh token.
-- [ ] 3.8 Validação de e-mail.
-- [ ] 3.9 Recuperação de senha, com token de uso único e expiração.
-- [ ] 3.10 Limite de tentativas em login e recuperação (acréscimo).
-- [ ] 3.11 Criação das categorias padrão no cadastro.
-- [ ] 3.12 Testes de autenticação e de cadastro.
+- [x] 3.8 Validação de e-mail.
+- [x] 3.9 Recuperação de senha, com token de uso único e expiração.
+- [x] 3.10 Limite de tentativas em login e recuperação (acréscimo).
+- [x] 3.12 Testes de autenticação e de cadastro.
 
 **Frontend**
 
@@ -206,6 +205,7 @@ Saída: documentos em `docs/`.
 
 - [ ] 4.2 Criar, editar e excluir, separando receita e despesa.
 - [ ] 4.3 Definir ícones (Material Design) e cores.
+- [ ] 4.3b Criar as categorias padrão no cadastro de novos usuários (movido da Fase 3: depende da tabela de categorias).
 - [ ] 4.4 Aplicar a estratégia de exclusão de categoria em uso (D6).
 
 **Transações**

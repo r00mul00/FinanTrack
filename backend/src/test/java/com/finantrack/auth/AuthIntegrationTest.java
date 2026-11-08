@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.finantrack.auth.repository.RefreshTokenRepository;
+import com.finantrack.auth.service.EmailSender;
 import com.finantrack.common.security.JwtConfig;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
@@ -25,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -54,6 +57,12 @@ class AuthIntegrationTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @MockitoBean
+    private EmailSender emailSender;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -62,6 +71,7 @@ class AuthIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         refreshTokenRepository.deleteAll();
+        jdbcTemplate.update("delete from user_tokens");
         userRepository.deleteAll();
     }
 
@@ -194,12 +204,15 @@ class AuthIntegrationTest {
                 .getTokenValue();
     }
 
+    /** Registra e já marca o e-mail como validado; o fluxo de validação tem testes próprios. */
     private ResultActions register(String name, String email, String password) throws Exception {
-        return mockMvc.perform(post("/api/v1/auth/register")
+        ResultActions result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name":"%s","email":"%s","password":"%s"}
                         """.formatted(name, email, password)));
+        jdbcTemplate.update("update users set email_verified_at = now()");
+        return result;
     }
 
     private ResultActions login(String email, String password) throws Exception {

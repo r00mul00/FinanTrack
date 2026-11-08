@@ -1,5 +1,9 @@
 # Produção: todos os valores vêm de variáveis de ambiente.
 # Frontend e API ficam na mesma origem, portanto o CORS não é liberado por padrão.
+server:
+  # A API roda atrás do Nginx: o IP real do cliente vem de X-Forwarded-For.
+  forward-headers-strategy: native
+
 finantrack:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}

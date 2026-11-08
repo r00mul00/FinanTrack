@@ -15,6 +15,11 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
   flyway:
     enabled: true
   mvc:
@@ -22,6 +27,10 @@ spring:
       enabled: true
 
 management:
+  health:
+    # Falha no SMTP não deve marcar a API como indisponível; o envio é assíncrono.
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -38,6 +47,16 @@ springdoc:
 
 finantrack:
   zone-id: America/Sao_Paulo
+  frontend-url: ${FRONTEND_URL}
+  tokens:
+    email-verification-ttl: PT24H
+    password-reset-ttl: PT30M
+  mail:
+    from: ${MAIL_FROM}
+  rate-limit:
+    ip-limit: 30
+    email-limit: 10
+    window: PT15M
   jwt:
     secret: ${JWT_SECRET}
     access-token-ttl: PT15M

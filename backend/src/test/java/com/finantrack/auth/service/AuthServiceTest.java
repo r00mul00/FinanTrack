@@ -11,9 +11,11 @@ import static org.mockito.Mockito.when;
 
 import com.finantrack.auth.dto.LoginRequest;
 import com.finantrack.auth.dto.RegisterRequest;
+import com.finantrack.common.exception.EmailNotVerifiedException;
 import com.finantrack.common.exception.InvalidCredentialsException;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,13 +29,14 @@ class AuthServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);
+    private final EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         when(passwordEncoder.encode(anyString())).thenReturn(DUMMY_HASH);
-        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService);
+        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService, emailVerificationService);
     }
 
     @Test
@@ -50,6 +53,7 @@ class AuthServiceTest {
     @Test
     void loginNormalizesEmail() {
         User user = new User("Ana", "ana@exemplo.com", "hash-real");
+        user.markEmailVerified(Instant.now());
         when(userRepository.findByEmail("ana@exemplo.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(eq("senha-correta"), eq("hash-real"))).thenReturn(true);
 
@@ -59,11 +63,33 @@ class AuthServiceTest {
     }
 
     @Test
-    void registerWithExistingEmailDoesNotSave() {
+    void unverifiedUserWithCorrectPasswordIsBlocked() {
+        User user = new User("Ana", "ana@exemplo.com", "hash-real");
+        when(userRepository.findByEmail("ana@exemplo.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(eq("senha-correta"), eq("hash-real"))).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("ana@exemplo.com", "senha-correta"), USER_AGENT))
+                .isInstanceOf(EmailNotVerifiedException.class);
+
+        verify(refreshTokenService, never()).startSession(any(), any());
+    }
+
+    @Test
+    void unverifiedUserWithWrongPasswordSeesOnlyInvalidCredentials() {
+        User user = new User("Ana", "ana@exemplo.com", "hash-real");
+        when(userRepository.findByEmail("ana@exemplo.com")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("ana@exemplo.com", "senha-errada"), USER_AGENT))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void registerWithExistingEmailDoesNotSaveNorSendEmail() {
         when(userRepository.existsByEmail("ana@exemplo.com")).thenReturn(true);
 
         authService.register(new RegisterRequest("Ana", "ana@exemplo.com", "senha-segura"));
 
         verify(userRepository, never()).saveAndFlush(any());
+        verify(emailVerificationService, never()).sendTo(any());
     }
 }

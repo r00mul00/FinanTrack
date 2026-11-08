@@ -7,6 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Locale;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -50,6 +51,22 @@ public class User extends BaseEntity {
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
+    }
+
+    public static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public void markEmailVerified(Instant when) {
+        this.emailVerifiedAt = when;
+    }
+
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
     }
 
     public String getName() {
