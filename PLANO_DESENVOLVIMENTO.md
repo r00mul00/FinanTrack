@@ -22,7 +22,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 2: Metas) |
+| 6 | Recursos financeiros | Em andamento (bloco 3: Cartões, API pronta; falta a tela) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |

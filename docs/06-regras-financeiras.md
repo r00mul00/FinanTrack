@@ -149,8 +149,7 @@ Exclusão de categoria em uso exige `reassignTo`, com categoria de mesmo tipo, e
 | Operação | Proteção |
 |---|---|
 | Retirada e depósito em meta | Lock pessoal na meta (`PESSIMISTIC_WRITE`) |
-| Compra no cartão | Lock pessoal no cartão, até concluir a verificação de limite |
-| Pagamento de fatura | Lock pessoal na fatura |
+| Compra, cancelamento e pagamento de fatura | Lock pessoal no cartão, para o limite e os pagamentos nunca serem lidos desatualizados |
 | Edição simultânea | `@Version`; conflito responde 409 |
 | Geração de recorrências e notificações | Índices únicos |
 

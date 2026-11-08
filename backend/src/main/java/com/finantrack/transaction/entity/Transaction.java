@@ -51,6 +51,9 @@ public class Transaction extends BaseEntity {
     @Column(length = 1000)
     private String notes;
 
+    @Column(name = "invoice_id", updatable = false)
+    private UUID invoiceId;
+
     @Version
     @Column(nullable = false)
     private long version;
@@ -61,6 +64,25 @@ public class Transaction extends BaseEntity {
     public Transaction(UUID userId, Details details) {
         this.userId = userId;
         apply(details);
+    }
+
+    /** Parcela de cartão: não movimenta conta; fica pendente até a fatura ser quitada. */
+    public static Transaction cardInstallment(UUID userId, String description, BigDecimal amount, UUID categoryId,
+            LocalDate date) {
+        Transaction transaction = new Transaction(userId, new Details(description, amount, TransactionType.EXPENSE,
+                TransactionStatus.PENDING, categoryId, null, date, null, null));
+        transaction.kind = TransactionKind.CARD_INSTALLMENT;
+        return transaction;
+    }
+
+    /** Pagamento de fatura: reduz o saldo da conta, mas não é uma nova despesa. */
+    public static Transaction invoicePayment(UUID userId, String description, BigDecimal amount, UUID accountId,
+            UUID invoiceId, LocalDate date) {
+        Transaction transaction = new Transaction(userId, new Details(description, amount, TransactionType.EXPENSE,
+                TransactionStatus.COMPLETED, null, accountId, date, null, null));
+        transaction.kind = TransactionKind.INVOICE_PAYMENT;
+        transaction.invoiceId = invoiceId;
+        return transaction;
     }
 
     public void update(Details details) {

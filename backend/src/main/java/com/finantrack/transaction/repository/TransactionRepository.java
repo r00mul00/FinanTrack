@@ -83,6 +83,26 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     List<CategoryTotal> sumExpensesByCategory(@Param("userId") UUID userId, @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
+    /** Ao quitar a fatura, as parcelas pendentes dela passam a efetivadas. */
+    @Modifying
+    @Query("""
+            update Transaction t
+               set t.status = com.finantrack.transaction.entity.TransactionStatus.COMPLETED,
+                   t.updatedAt = :now, t.version = t.version + 1
+             where t.status = com.finantrack.transaction.entity.TransactionStatus.PENDING
+               and t.id in (select i.transactionId from CreditCardInstallment i where i.invoiceId = :invoiceId)
+            """)
+    int completeInstallmentsOfInvoice(@Param("invoiceId") UUID invoiceId, @Param("now") Instant now);
+
+    @Modifying
+    @Query("""
+            update Transaction t
+               set t.status = com.finantrack.transaction.entity.TransactionStatus.CANCELED,
+                   t.updatedAt = :now, t.version = t.version + 1
+             where t.id in (select i.transactionId from CreditCardInstallment i where i.purchaseId = :purchaseId)
+            """)
+    int cancelInstallmentsOfPurchase(@Param("purchaseId") UUID purchaseId, @Param("now") Instant now);
+
     /** Regra de docs/06: o orçamento mede o comprometido, por isso inclui pendentes. */
     @Query("select t.categoryId as categoryId, sum(t.amount) as total from Transaction t"
             + " where t.userId = :userId and t.transactionDate between :from and :to"
