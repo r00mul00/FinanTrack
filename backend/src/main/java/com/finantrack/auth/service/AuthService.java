@@ -1,8 +1,8 @@
 package com.finantrack.auth.service;
 
+import com.finantrack.auth.dto.AuthSession;
 import com.finantrack.auth.dto.LoginRequest;
 import com.finantrack.auth.dto.RegisterRequest;
-import com.finantrack.auth.dto.TokenResponse;
 import com.finantrack.common.exception.InvalidCredentialsException;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
@@ -17,14 +17,14 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AccessTokenService accessTokenService;
+    private final RefreshTokenService refreshTokenService;
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-            AccessTokenService accessTokenService) {
+            RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.accessTokenService = accessTokenService;
+        this.refreshTokenService = refreshTokenService;
         this.dummyHash = passwordEncoder.encode("hash-para-igualar-o-tempo-de-resposta");
     }
 
@@ -44,7 +44,7 @@ public class AuthService {
     }
 
     /** Sem usuário, compara com um hash fictício para o tempo de resposta ser equivalente. */
-    public TokenResponse login(LoginRequest request) {
+    public AuthSession login(LoginRequest request, String userAgent) {
         Optional<User> user = userRepository.findByEmail(normalize(request.email()));
         String hash = user.map(User::getPasswordHash).orElse(dummyHash);
 
@@ -52,7 +52,7 @@ public class AuthService {
         if (user.isEmpty() || !passwordMatches) {
             throw new InvalidCredentialsException();
         }
-        return accessTokenService.issue(user.get());
+        return refreshTokenService.startSession(user.get(), userAgent);
     }
 
     private String normalize(String email) {

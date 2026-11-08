@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.finantrack.auth.repository.RefreshTokenRepository;
 import com.finantrack.common.security.JwtConfig;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
@@ -50,6 +51,9 @@ class AuthIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -57,6 +61,7 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
 

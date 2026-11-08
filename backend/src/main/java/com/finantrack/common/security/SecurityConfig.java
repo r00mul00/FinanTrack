@@ -10,6 +10,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
@@ -34,10 +36,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .oauth2ResourceServer(server -> server.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(server -> server
+                        .bearerTokenResolver(ignoringAuthRoutes())
+                        .jwt(Customizer.withDefaults()))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/actuator/health").permitAll();
-                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
+                            "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll();
                     if (swaggerPublic) {
                         auth.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
                     }
@@ -45,6 +50,12 @@ public class SecurityConfig {
                 });
 
         return http.build();
+    }
+
+    /** Nas rotas de autenticação o Bearer é ignorado: um token expirado não pode impedir a renovação. */
+    private BearerTokenResolver ignoringAuthRoutes() {
+        DefaultBearerTokenResolver resolver = new DefaultBearerTokenResolver();
+        return request -> request.getRequestURI().startsWith("/api/v1/auth/") ? null : resolver.resolve(request);
     }
 
     @Bean

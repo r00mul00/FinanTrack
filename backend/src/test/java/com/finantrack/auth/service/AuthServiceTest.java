@@ -22,28 +22,29 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class AuthServiceTest {
 
     private static final String DUMMY_HASH = "dummy-hash";
+    private static final String USER_AGENT = "navegador";
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    private final AccessTokenService accessTokenService = mock(AccessTokenService.class);
+    private final RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         when(passwordEncoder.encode(anyString())).thenReturn(DUMMY_HASH);
-        authService = new AuthService(userRepository, passwordEncoder, accessTokenService);
+        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService);
     }
 
     @Test
     void loginWithUnknownEmailStillComparesPassword() {
         when(userRepository.findByEmail("nao@existe.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest("nao@existe.com", "qualquer-senha")))
+        assertThatThrownBy(() -> authService.login(new LoginRequest("nao@existe.com", "qualquer-senha"), USER_AGENT))
                 .isInstanceOf(InvalidCredentialsException.class);
 
         verify(passwordEncoder).matches("qualquer-senha", DUMMY_HASH);
-        verify(accessTokenService, never()).issue(any());
+        verify(refreshTokenService, never()).startSession(any(), any());
     }
 
     @Test
@@ -52,9 +53,9 @@ class AuthServiceTest {
         when(userRepository.findByEmail("ana@exemplo.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(eq("senha-correta"), eq("hash-real"))).thenReturn(true);
 
-        authService.login(new LoginRequest("  ANA@Exemplo.com ", "senha-correta"));
+        authService.login(new LoginRequest("  ANA@Exemplo.com ", "senha-correta"), USER_AGENT);
 
-        verify(accessTokenService).issue(user);
+        verify(refreshTokenService).startSession(user, USER_AGENT);
     }
 
     @Test

@@ -19,7 +19,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 0 | Preparação do ambiente (acréscimo) | Concluída (Docker adiado, item 0.3b) |
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
-| 3 | Autenticação | Em andamento (entrega 1 de 4) |
+| 3 | Autenticação | Em andamento (entrega 2 de 4) |
 | 4 | Transações | Não iniciada |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
@@ -174,9 +174,9 @@ Saída: documentos em `docs/`.
 - [x] 3.2 Cadastro com BCrypt.
 - [x] 3.3 Login com emissão de JWT.
 - [x] 3.4 Validação de JWT no Spring Security.
-- [ ] 3.5 Refresh Token com rotação e revogação; armazenar apenas o hash.
-- [ ] 3.6 Detecção de reutilização de refresh token (acréscimo).
-- [ ] 3.7 Logout com invalidação do refresh token.
+- [x] 3.5 Refresh Token com rotação e revogação; armazenar apenas o hash.
+- [x] 3.6 Detecção de reutilização de refresh token (acréscimo).
+- [x] 3.7 Logout com invalidação do refresh token.
 - [ ] 3.8 Validação de e-mail.
 - [ ] 3.9 Recuperação de senha, com token de uso único e expiração.
 - [ ] 3.10 Limite de tentativas em login e recuperação (acréscimo).

@@ -10,6 +10,8 @@ springdoc:
     enabled: true
 
 finantrack:
+  refresh:
+    cookie-secure: false
   security:
     swagger-public: true
   cors:
