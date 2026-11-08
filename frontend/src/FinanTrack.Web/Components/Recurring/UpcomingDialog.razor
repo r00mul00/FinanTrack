@@ -1,0 +1,52 @@
+@attribute [AllowAnonymous]
+@using System.Globalization
+@inject RecurringApi Api
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudSkeleton Height="40px" />
+            <MudSkeleton Height="40px" />
+        }
+        else if (_dates is null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">Não foi possível carregar as ocorrências.</MudAlert>
+        }
+        else if (_dates.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="py-4">Nenhuma próxima ocorrência.</MudText>
+        }
+        else
+        {
+            <div class="ft-history">
+                @foreach (var date in _dates)
+                {
+                    <div class="ft-recent-row">
+                        <MudIcon Icon="@Icons.Material.Rounded.Event" Size="Size.Small" />
+                        <div class="ft-category-name"><MudText Typo="Typo.body2">@date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</MudText></div>
+                        <span>@Money.Format(Item.Amount)</span>
+                    </div>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<DateOnly>? _dates;
+    private bool _loading = true;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RecurringResponse Item { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dates = await Api.GetUpcomingAsync(Item.Id);
+        _loading = false;
+    }
+}

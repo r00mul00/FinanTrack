@@ -30,6 +30,7 @@ public sealed record TransactionResponse(
     DateOnly TransactionDate,
     DateOnly? DueDate,
     string? Notes,
+    bool Recurring,
     long Version);
 
 public sealed record PageResponse<T>(List<T> Content, int Page, int Size, long TotalElements, int TotalPages);

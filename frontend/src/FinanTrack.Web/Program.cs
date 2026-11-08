@@ -48,6 +48,7 @@ builder.Services.AddScoped<TransactionApi>();
 builder.Services.AddScoped<BudgetApi>();
 builder.Services.AddScoped<GoalApi>();
 builder.Services.AddScoped<CardApi>();
+builder.Services.AddScoped<RecurringApi>();
 builder.Services.AddMudServices(config =>
 {
     // No canto inferior, os avisos não cobrem o botão principal das páginas.

@@ -1,0 +1,217 @@
+@attribute [AllowAnonymous]
+@inject RecurringApi Api
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        @if (Item is not null)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">As alterações valem só para os próximos lançamentos.</MudAlert>
+        }
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <LabeledTextField @bind-Value="_description" Label="Descrição" RequiredError="Informe a descrição." MaxLength="200" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-amount">
+                        <span class="ft-field-label">Valor (R$)</span>
+                        <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
+                                         Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor." />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-type">
+                        <span class="ft-field-label">Tipo</span>
+                        <MudSelect T="TransactionType" Value="_type" ValueChanged="OnTypeChanged" Variant="Variant.Outlined" aria-label="Tipo">
+                            @foreach (var type in Enum.GetValues<TransactionType>())
+                            {
+                                <MudSelectItem Value="type">@type.Label()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-category">
+                        <span class="ft-field-label">Categoria</span>
+                        <MudSelect T="Guid?" @bind-Value="_categoryId" Variant="Variant.Outlined" aria-label="Categoria"
+                                   Required="true" RequiredError="Selecione a categoria." ToStringFunc="CategoryName">
+                            @foreach (var category in CategoryOptions)
+                            {
+                                <MudSelectItem T="Guid?" Value="category.Id">@category.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-account">
+                        <span class="ft-field-label">Conta</span>
+                        <MudSelect T="Guid?" @bind-Value="_accountId" Variant="Variant.Outlined" aria-label="Conta"
+                                   Required="true" RequiredError="Selecione a conta." ToStringFunc="AccountName">
+                            @foreach (var account in AccountOptions)
+                            {
+                                <MudSelectItem T="Guid?" Value="account.Id">@account.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                    <div class="ft-field ft-rec-frequency">
+                        <span class="ft-field-label">Frequência</span>
+                        <MudSelect T="RecurrenceFrequency" @bind-Value="_frequency" Variant="Variant.Outlined" aria-label="Frequência">
+                            @foreach (var frequency in Enum.GetValues<RecurrenceFrequency>())
+                            {
+                                <MudSelectItem Value="frequency">@frequency.Label()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-start">
+                        <span class="ft-field-label">Início</span>
+                        <MudDatePicker @bind-Date="_start" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                                       AutoClose="true" Required="true" RequiredError="Informe o início." Disabled="@(Item is not null)" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-rec-end">
+                        <span class="ft-field-label">Término (opcional)</span>
+                        <MudDatePicker @bind-Date="_end" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                                       AutoClose="true" Clearable="true" />
+                    </div>
+                </MudItem>
+                @if (Item is null)
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            Ciclos com data até hoje são lançados na hora, como pendentes.
+                        </MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private sealed record Snapshot(string Description, decimal? Amount, TransactionType Type, Guid? CategoryId, Guid? AccountId,
+        RecurrenceFrequency Frequency, DateTime? Start, DateTime? End);
+
+    private MudForm _form = default!;
+    private string? _description;
+    private decimal? _amount;
+    private TransactionType _type = TransactionType.EXPENSE;
+    private Guid? _categoryId;
+    private Guid? _accountId;
+    private RecurrenceFrequency _frequency = RecurrenceFrequency.MONTHLY;
+    private DateTime? _start = DateTime.Today;
+    private DateTime? _end;
+    private string? _error;
+    private bool _busy;
+    private Snapshot _initial = default!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nulo ao criar; preenchido ao editar.</summary>
+    [Parameter] public RecurringResponse? Item { get; set; }
+    [Parameter] public IReadOnlyList<CategoryResponse> Categories { get; set; } = [];
+    [Parameter] public IReadOnlyList<AccountResponse> Accounts { get; set; } = [];
+
+    private IEnumerable<CategoryResponse> CategoryOptions => Categories.Where(c =>
+        c.Type == _type.ToCategoryType() && (!c.Archived || c.Id == Item?.CategoryId));
+
+    private IEnumerable<AccountResponse> AccountOptions => Accounts.Where(a => !a.Archived || a.Id == Item?.AccountId);
+
+    private string CategoryName(Guid? id) => Categories.FirstOrDefault(c => c.Id == id)?.Name ?? "";
+
+    private string AccountName(Guid? id) => Accounts.FirstOrDefault(a => a.Id == id)?.Name ?? "";
+
+    protected override void OnInitialized()
+    {
+        if (Item is not null)
+        {
+            _description = Item.Description;
+            _amount = Item.Amount;
+            _type = Item.Type;
+            _categoryId = Item.CategoryId;
+            _accountId = Item.AccountId;
+            _frequency = Item.Frequency;
+            _start = Item.StartDate.ToDateTime(TimeOnly.MinValue);
+            _end = Item.EndDate?.ToDateTime(TimeOnly.MinValue);
+        }
+        else if (AccountOptions.Count() == 1)
+        {
+            _accountId = AccountOptions.First().Id;
+        }
+        _initial = Current();
+    }
+
+    private Snapshot Current() => new(_description ?? "", _amount, _type, _categoryId, _accountId, _frequency, _start, _end);
+
+    private void OnTypeChanged(TransactionType type)
+    {
+        _type = type;
+        _categoryId = null;
+    }
+
+    private async Task CancelAsync()
+    {
+        if (Current() != _initial)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var request = new RecurringRequest(_description!.Trim(), _amount!.Value, _type, _categoryId!.Value, _accountId!.Value,
+            _frequency, DateOnly.FromDateTime(_start!.Value), _end is null ? null : DateOnly.FromDateTime(_end.Value), Item?.Version);
+        var result = Item is null ? await Api.CreateAsync(request) : await Api.UpdateAsync(Item.Id, request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Item is null ? "Recorrência criada." : "Recorrência atualizada.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

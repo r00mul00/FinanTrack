@@ -22,7 +22,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 3: Cartões) |
+| 6 | Recursos financeiros | Em andamento (bloco 4: Contas recorrentes) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
@@ -275,10 +275,10 @@ Saída: documentos em `docs/`.
 
 **Contas recorrentes**
 
-- [ ] 6.17 Criar receitas e despesas recorrentes, com frequência, início e término opcional.
-- [ ] 6.18 Pausar e reativar.
-- [ ] 6.19 Consultar próximas ocorrências.
-- [ ] 6.20 Geração sem duplicidade em cada ciclo (D7), com teste de execução repetida.
+- [x] 6.17 Criar receitas e despesas recorrentes, com frequência, início e término opcional.
+- [x] 6.18 Pausar e reativar.
+- [x] 6.19 Consultar próximas ocorrências.
+- [x] 6.20 Geração sem duplicidade em cada ciclo (D7), com teste de execução repetida.
 
 **Transversais (acréscimo)**
 

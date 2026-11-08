@@ -54,6 +54,12 @@ public class Transaction extends BaseEntity {
     @Column(name = "invoice_id", updatable = false)
     private UUID invoiceId;
 
+    @Column(name = "recurring_id", updatable = false)
+    private UUID recurringId;
+
+    @Column(name = "occurrence_date", updatable = false)
+    private LocalDate occurrenceDate;
+
     @Version
     @Column(nullable = false)
     private long version;
@@ -64,6 +70,14 @@ public class Transaction extends BaseEntity {
     public Transaction(UUID userId, Details details) {
         this.userId = userId;
         apply(details);
+    }
+
+    /** Lançamento gerado por uma recorrência: nasce pendente, vencendo na data do ciclo. */
+    public static Transaction recurringOccurrence(UUID userId, UUID recurringId, LocalDate occurrenceDate, Details details) {
+        Transaction transaction = new Transaction(userId, details);
+        transaction.recurringId = recurringId;
+        transaction.occurrenceDate = occurrenceDate;
+        return transaction;
     }
 
     /** Parcela de cartão: não movimenta conta; fica pendente até a fatura ser quitada. */
@@ -159,6 +173,10 @@ public class Transaction extends BaseEntity {
 
     public String getNotes() {
         return notes;
+    }
+
+    public boolean isRecurring() {
+        return recurringId != null;
     }
 
     public long getVersion() {

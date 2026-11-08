@@ -1,0 +1,201 @@
+@page "/recorrencias"
+@using System.Globalization
+@using FinanTrack.Web.Components.Recurring
+@inject RecurringApi Api
+@inject CategoryApi CategoriesApi
+@inject AccountApi AccountsApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Contas recorrentes | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Contas recorrentes</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
+               Disabled="@(_items is null || !_accounts.Any(a => !a.Archived))" OnClick="() => OpenDialogAsync(null)">
+        Nova recorrência
+    </MudButton>
+</div>
+
+@if (_items is not null && !_accounts.Any(a => !a.Archived))
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Cadastre uma conta para criar recorrências.
+        <MudLink Class="ml-1" Href="/configuracoes">Ir para Configurações</MudLink>
+    </MudAlert>
+}
+
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar as recorrências.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
+else if (_items is null)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+}
+else if (_items.Count == 0)
+{
+    <MudPaper Elevation="0" Class="ft-card pa-8 d-flex flex-column align-center">
+        <MudIcon Icon="@Icons.Material.Rounded.Autorenew" Size="Size.Large" Color="Color.Primary" Class="mb-3" />
+        <MudText Typo="Typo.body1">Nenhuma recorrência cadastrada.</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Aluguel, salário e assinaturas se lançam sozinhos.</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var item in _items)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="ft-card pa-4 ft-recurring">
+                    <div class="d-flex align-center gap-3">
+                        <span class="ft-category-icon" style="background-color: @(item.CategoryColor)26; color: @item.CategoryColor;">
+                            <MudIcon Icon="@CategoryAppearance.IconFor(item.CategoryIcon)" Size="Size.Small" />
+                        </span>
+                        <div class="ft-category-name">
+                            <MudText Typo="Typo.body1" Class="ft-ellipsis">@item.Description</MudText>
+                            <span class="ft-budget-state">
+                                <MudIcon Icon="@item.Status.Icon()" Size="Size.Small" Color="@item.Status.Color()" />
+                                @item.Status.Label() · @item.Frequency.Label()
+                            </span>
+                        </div>
+                        <span class="@(item.Type == TransactionType.INCOME ? "ft-amount-income" : "ft-amount-expense")">
+                            @(item.Type == TransactionType.INCOME ? "+" : "-") @Money.Format(item.Amount)
+                        </span>
+                    </div>
+
+                    <MudText Typo="Typo.body2" Class="mt-3" Style="color: var(--mud-palette-text-secondary);">
+                        @item.CategoryName · @item.AccountName
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        @Schedule(item)
+                    </MudText>
+
+                    <div class="d-flex align-center flex-wrap gap-1 mt-2">
+                        @if (item.Status == RecurringStatus.ACTIVE)
+                        {
+                            <MudTooltip Text="Próximas ocorrências">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Event" Size="Size.Small" aria-label="@($"Próximas ocorrências de {item.Description}")" OnClick="() => OpenUpcomingAsync(item)" />
+                            </MudTooltip>
+                            <MudTooltip Text="Pausar">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Pause" Size="Size.Small" aria-label="@($"Pausar {item.Description}")" OnClick="() => PauseAsync(item)" />
+                            </MudTooltip>
+                        }
+                        else if (item.Status == RecurringStatus.PAUSED)
+                        {
+                            <MudTooltip Text="Reativar">
+                                <MudIconButton Icon="@Icons.Material.Rounded.PlayArrow" Size="Size.Small" Color="Color.Success" aria-label="@($"Reativar {item.Description}")" OnClick="() => ResumeAsync(item)" />
+                            </MudTooltip>
+                        }
+                        @if (item.Status != RecurringStatus.FINISHED)
+                        {
+                            <MudTooltip Text="Editar">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {item.Description}")" OnClick="() => OpenDialogAsync(item)" />
+                            </MudTooltip>
+                        }
+                        <MudTooltip Text="Excluir">
+                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {item.Description}")" OnClick="() => DeleteAsync(item)" />
+                        </MudTooltip>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private List<RecurringResponse>? _items;
+    private List<CategoryResponse> _categories = [];
+    private List<AccountResponse> _accounts = [];
+    private bool _loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = CategoriesApi.ListAsync();
+        var accounts = AccountsApi.ListAsync();
+        _categories = await categories ?? [];
+        _accounts = await accounts ?? [];
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loadFailed = false;
+        _items = await Api.ListAsync();
+        _loadFailed = _items is null;
+    }
+
+    private static string Format(DateOnly date) => date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private static string Schedule(RecurringResponse item)
+    {
+        var end = item.EndDate is null ? "sem término" : $"até {Format(item.EndDate.Value)}";
+        return item.Status switch
+        {
+            RecurringStatus.ACTIVE => $"Próximo: {Format(item.NextOccurrenceDate!.Value)} · {end}",
+            RecurringStatus.PAUSED => $"Pausada · {end}",
+            _ => $"Início em {Format(item.StartDate)} · {end}"
+        };
+    }
+
+    private async Task OpenDialogAsync(RecurringResponse? item)
+    {
+        var parameters = new DialogParameters<RecurringDialog>
+        {
+            { x => x.Item, item },
+            { x => x.Categories, _categories },
+            { x => x.Accounts, _accounts }
+        };
+        var dialog = await Dialogs.ShowAsync<RecurringDialog>(item is null ? "Nova recorrência" : "Editar recorrência", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task OpenUpcomingAsync(RecurringResponse item)
+    {
+        var parameters = new DialogParameters<UpcomingDialog> { { x => x.Item, item } };
+        await Dialogs.ShowAsync<UpcomingDialog>($"Próximas: {item.Description}", parameters, Options);
+    }
+
+    private async Task DeleteAsync(RecurringResponse item)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir recorrência", $"Excluir \"{item.Description}\"? Os lançamentos já gerados continuam nas suas transações.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed == true)
+        {
+            await RunAsync(Api.DeleteAsync(item.Id), "Recorrência excluída.");
+        }
+    }
+
+    private Task PauseAsync(RecurringResponse item) => RunAsync(Api.PauseAsync(item.Id), "Recorrência pausada.");
+
+    private Task ResumeAsync(RecurringResponse item) => RunAsync(Api.ResumeAsync(item.Id), "Recorrência reativada.");
+
+    private async Task RunAsync(Task<ApiResult> action, string successMessage)
+    {
+        var result = await action;
+        if (result.Success)
+        {
+            Snackbar.Add(successMessage, Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

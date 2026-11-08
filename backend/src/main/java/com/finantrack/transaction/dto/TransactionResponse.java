@@ -23,5 +23,6 @@ public record TransactionResponse(
         LocalDate transactionDate,
         LocalDate dueDate,
         String notes,
+        boolean recurring,
         long version) {
 }

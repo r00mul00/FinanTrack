@@ -7,6 +7,7 @@ import com.finantrack.account.mapper.AccountMapper;
 import com.finantrack.account.repository.AccountRepository;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.ResourceNotFoundException;
+import com.finantrack.recurring.repository.RecurringTransactionRepository;
 import com.finantrack.transaction.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,12 +25,14 @@ public class AccountService {
 
     private final AccountRepository repository;
     private final TransactionRepository transactionRepository;
+    private final RecurringTransactionRepository recurringRepository;
     private final AccountMapper mapper;
 
     public AccountService(AccountRepository repository, TransactionRepository transactionRepository,
-            AccountMapper mapper) {
+            RecurringTransactionRepository recurringRepository, AccountMapper mapper) {
         this.repository = repository;
         this.transactionRepository = transactionRepository;
+        this.recurringRepository = recurringRepository;
         this.mapper = mapper;
     }
 
@@ -75,6 +78,9 @@ public class AccountService {
         Account account = find(id, userId);
         if (transactionRepository.existsByAccountId(id)) {
             throw new ConflictException("Esta conta possui movimentações. Arquive-a para manter o histórico.");
+        }
+        if (recurringRepository.existsByAccountId(id)) {
+            throw new ConflictException("Esta conta é usada por contas recorrentes. Altere-as antes de excluir.");
         }
         repository.delete(account);
     }

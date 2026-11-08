@@ -138,7 +138,9 @@ Compra só pode ser cancelada se nenhuma parcela estiver em fatura com pagamento
 - Datas mensais partem do dia de `start_date`; dia inexistente usa o último do mês, sem perder o dia original nos meses seguintes.
 - Pausa: nada é gerado. Ao reativar, o cursor vai para a primeira data `>= hoje`, sem lançamentos retroativos do período pausado.
 - Após `end_date`, o status vira `FINISHED`.
-- Editar afeta apenas as próximas ocorrências.
+- Editar afeta apenas as próximas ocorrências. A data de início é fixa, e uma recorrência encerrada não aceita alterações.
+- Ao criar ou reativar, os ciclos já devidos são gerados na hora; o job também roda ao iniciar a aplicação, para recuperar ciclos perdidos.
+- Excluir a recorrência mantém os lançamentos já gerados, sem o vínculo.
 
 ## Categorias
 

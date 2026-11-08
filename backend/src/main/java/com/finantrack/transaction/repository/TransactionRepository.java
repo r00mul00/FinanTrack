@@ -117,6 +117,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     boolean existsByAccountId(UUID accountId);
 
+    @Query("select count(t) > 0 from Transaction t where t.recurringId = :id and t.occurrenceDate = :date")
+    boolean existsOccurrence(@Param("id") UUID recurringId, @Param("date") LocalDate occurrenceDate);
+
     long countByCategoryId(UUID categoryId);
 
     @Query("select t.accountId as accountId, sum(" + SIGNED_AMOUNT + ") as total from Transaction t"

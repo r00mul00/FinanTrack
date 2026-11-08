@@ -109,7 +109,19 @@
             <PropertyColumn Property="x => x.TransactionDate" Title="Data">
                 <CellTemplate>@FormatDate(context.Item.TransactionDate)</CellTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.Description" Title="Descrição" />
+            <PropertyColumn Property="x => x.Description" Title="Descrição">
+                <CellTemplate>
+                    <span class="ft-tx-category-cell">
+                        @context.Item.Description
+                        @if (context.Item.Recurring)
+                        {
+                            <MudTooltip Text="Lançamento recorrente">
+                                <MudIcon Icon="@Icons.Material.Rounded.Autorenew" Size="Size.Small" Style="color: var(--mud-palette-text-secondary);" aria-label="Lançamento recorrente" />
+                            </MudTooltip>
+                        }
+                    </span>
+                </CellTemplate>
+            </PropertyColumn>
             <TemplateColumn T="TransactionResponse" Title="Categoria" Sortable="false">
                 <CellTemplate>
                     @if (context.Item.CategoryName is not null)
