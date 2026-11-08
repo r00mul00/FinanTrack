@@ -36,6 +36,7 @@ builder.Services.AddScoped<AuthApi>();
 builder.Services.AddScoped<UserApi>();
 builder.Services.AddScoped<AccountApi>();
 builder.Services.AddScoped<CategoryApi>();
+builder.Services.AddScoped<TransactionApi>();
 builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

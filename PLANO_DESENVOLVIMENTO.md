@@ -20,7 +20,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
-| 4 | Transações | Em andamento (entrega 3: API de Transações) |
+| 4 | Transações | Aguardando validação |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
 | 7 | Relatórios e Configurações | Não iniciada |
@@ -213,10 +213,10 @@ Saída: documentos em `docs/`.
 - [x] 4.5 Migration com índices para os filtros.
 - [x] 4.6 API de CRUD com DTOs, Bean Validation e verificação de dono em toda consulta.
 - [x] 4.7 Pesquisa por descrição; filtros por período, categoria, tipo e status; ordenação e paginação.
-- [ ] 4.8 Listagem com `MudDataGrid` e paginação no servidor.
-- [ ] 4.9 Cadastro e edição em `MudDialog`.
-- [ ] 4.10 Pesquisa com debounce e opção de limpar; filtros combináveis e opção de limpar filtros.
-- [ ] 4.11 Testes: CRUD, categorias, cálculo de saldo e isolamento de dados entre usuários.
+- [x] 4.8 Listagem com `MudDataGrid` e paginação no servidor.
+- [x] 4.9 Cadastro e edição em `MudDialog`. Cartão e indicador de recorrência entram na Fase 6, com aqueles módulos.
+- [x] 4.10 Pesquisa com debounce e opção de limpar; filtros combináveis e opção de limpar filtros.
+- [x] 4.11 Testes: CRUD, categorias, cálculo de saldo e isolamento de dados entre usuários.
 
 **Campos da transação:** descrição, valor, tipo, categoria, conta, cartão (opcional), data da movimentação, data de vencimento (opcional), status, observações, indicador de recorrência.
 

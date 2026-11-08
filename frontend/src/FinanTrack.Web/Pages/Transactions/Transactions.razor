@@ -1,0 +1,385 @@
+@page "/transacoes"
+@using System.Globalization
+@using FinanTrack.Web.Components.Transactions
+@inject TransactionApi TransactionsApi
+@inject CategoryApi CategoriesApi
+@inject AccountApi AccountsApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Transações | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Transações</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
+               Disabled="@(!_ready || !HasActiveAccount)" OnClick="() => OpenDialogAsync(null)">
+        Nova movimentação
+    </MudButton>
+</div>
+
+@if (_ready && !HasActiveAccount)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Cadastre uma conta para registrar movimentações.
+        <MudLink Class="ml-1" Href="/configuracoes">Ir para Configurações</MudLink>
+    </MudAlert>
+}
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar as movimentações.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="ReloadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
+
+<MudPaper Elevation="0" Class="ft-card pa-4 mb-4">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <div class="ft-field ft-filter-search">
+                <span class="ft-field-label">Pesquisar</span>
+                <MudTextField T="string" @bind-Value="_search" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Placeholder="Descrição" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Search"
+                              DebounceInterval="400" OnDebounceIntervalElapsed="OnSearchChanged"
+                              Clearable="true" OnClearButtonClick="() => OnSearchChanged(null)" />
+            </div>
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            <div class="ft-field ft-filter-type">
+                <span class="ft-field-label">Tipo</span>
+                <MudSelect T="TransactionType?" Value="_type" ValueChanged="OnTypeChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Placeholder="Todos" Clearable="true" aria-label="Filtrar por tipo">
+                    @foreach (var type in Enum.GetValues<TransactionType>())
+                    {
+                        <MudSelectItem T="TransactionType?" Value="type">@type.Label()</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            <div class="ft-field ft-filter-status">
+                <span class="ft-field-label">Status</span>
+                <MudSelect T="TransactionStatus?" Value="_status" ValueChanged="OnStatusChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Placeholder="Todos" Clearable="true" aria-label="Filtrar por status">
+                    @foreach (var status in Enum.GetValues<TransactionStatus>())
+                    {
+                        <MudSelectItem T="TransactionStatus?" Value="status">@status.Label()</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="4">
+            <div class="ft-field ft-filter-category">
+                <span class="ft-field-label">Categoria</span>
+                <MudSelect T="Guid?" Value="_categoryId" ValueChanged="OnCategoryChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Placeholder="Todas" Clearable="true" aria-label="Filtrar por categoria" ToStringFunc="CategoryName">
+                    @foreach (var category in FilterCategories)
+                    {
+                        <MudSelectItem T="Guid?" Value="category.Id">@category.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        </MudItem>
+        <MudItem xs="6" md="4">
+            <div class="ft-field ft-filter-from">
+                <span class="ft-field-label">De</span>
+                <MudDatePicker Date="_from" DateChanged="OnFromChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance" AutoClose="true" Clearable="true" />
+            </div>
+        </MudItem>
+        <MudItem xs="6" md="4">
+            <div class="ft-field ft-filter-to">
+                <span class="ft-field-label">Até</span>
+                <MudDatePicker Date="_to" DateChanged="OnToChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance" AutoClose="true" Clearable="true" />
+            </div>
+        </MudItem>
+        <MudItem xs="12" md="4" Class="d-flex align-end">
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Rounded.FilterAltOff" Disabled="@(!HasFilters)" OnClick="ClearFiltersAsync">
+                Limpar filtros
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Elevation="0" Class="ft-card pa-2">
+    <MudDataGrid @ref="_grid" T="TransactionResponse" ServerData="LoadServerData" Elevation="0" Hover="true"
+                 HorizontalScrollbar="true" Class="ft-grid" RowsPerPage="20" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.TransactionDate" Title="Data">
+                <CellTemplate>@FormatDate(context.Item.TransactionDate)</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Description" Title="Descrição" />
+            <TemplateColumn T="TransactionResponse" Title="Categoria" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.CategoryName is not null)
+                    {
+                        <span class="ft-tx-category-cell">
+                            <span class="ft-category-icon small" style="background-color: @(context.Item.CategoryColor)26; color: @context.Item.CategoryColor;">
+                                <MudIcon Icon="@CategoryAppearance.IconFor(context.Item.CategoryIcon ?? "")" Size="Size.Small" />
+                            </span>
+                            @context.Item.CategoryName
+                        </span>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="TransactionResponse" Title="Conta" Sortable="false">
+                <CellTemplate>@context.Item.AccountName</CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Amount" Title="Valor">
+                <CellTemplate>
+                    <span class="@(context.Item.Type == TransactionType.INCOME ? "ft-amount-income" : "ft-amount-expense")">
+                        @(context.Item.Type == TransactionType.INCOME ? "+" : "-") @Money.Format(context.Item.Amount)
+                    </span>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Status" Title="Status">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@StatusColor(context.Item.Status)">@context.Item.Status.Label()</MudChip>
+                </CellTemplate>
+            </PropertyColumn>
+            <TemplateColumn T="TransactionResponse" Title="Ações" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.Status == TransactionStatus.PENDING)
+                    {
+                        <MudTooltip Text="Marcar como efetivada">
+                            <MudIconButton Icon="@Icons.Material.Rounded.CheckCircle" Size="Size.Small" Color="Color.Success"
+                                           aria-label="@($"Efetivar {context.Item.Description}")"
+                                           OnClick="() => CompleteAsync(context.Item)" />
+                        </MudTooltip>
+                    }
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
+                                       aria-label="@($"Editar {context.Item.Description}")"
+                                       OnClick="() => OpenDialogAsync(context.Item)" />
+                    </MudTooltip>
+                    <MudTooltip Text="Excluir">
+                        <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
+                                       aria-label="@($"Excluir {context.Item.Description}")"
+                                       OnClick="() => DeleteAsync(context.Item)" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Class="py-4">
+                @(HasFilters ? "Nenhuma movimentação encontrada com estes filtros." : "Nenhuma movimentação cadastrada.")
+            </MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudDataGridPager T="TransactionResponse" PageSizeOptions="@(new[] { 10, 20, 50, 100 })"
+                              RowsPerPageString="Por página:" InfoFormat="{first_item}-{last_item} de {all_items}" />
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private static readonly Dictionary<string, string> SortFields = new()
+    {
+        [nameof(TransactionResponse.TransactionDate)] = "transactionDate",
+        [nameof(TransactionResponse.Description)] = "description",
+        [nameof(TransactionResponse.Amount)] = "amount",
+        [nameof(TransactionResponse.Status)] = "status"
+    };
+
+    private MudDataGrid<TransactionResponse> _grid = default!;
+    private List<CategoryResponse> _categories = [];
+    private List<AccountResponse> _accounts = [];
+    private bool _ready;
+    private bool _loadFailed;
+    private int _visibleCount;
+
+    private string? _search;
+    private TransactionType? _type;
+    private TransactionStatus? _status;
+    private Guid? _categoryId;
+    private DateTime? _from;
+    private DateTime? _to;
+
+    private bool HasActiveAccount => _accounts.Any(a => !a.Archived);
+
+    private bool HasFilters => !string.IsNullOrWhiteSpace(_search) || _type is not null || _status is not null
+        || _categoryId is not null || _from is not null || _to is not null;
+
+    private IEnumerable<CategoryResponse> FilterCategories => _type is null
+        ? _categories
+        : _categories.Where(c => c.Type == _type.Value.ToCategoryType());
+
+    private string CategoryName(Guid? id) => _categories.FirstOrDefault(c => c.Id == id)?.Name ?? "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = CategoriesApi.ListAsync();
+        var accounts = AccountsApi.ListAsync();
+        _categories = await categories ?? [];
+        _accounts = await accounts ?? [];
+        _ready = true;
+    }
+
+    private async Task<GridData<TransactionResponse>> LoadServerData(GridState<TransactionResponse> state, CancellationToken cancellationToken)
+    {
+        var filter = new TransactionFilter(_search, _type, _status, _categoryId,
+            _from is null ? null : DateOnly.FromDateTime(_from.Value),
+            _to is null ? null : DateOnly.FromDateTime(_to.Value));
+
+        PageResponse<TransactionResponse>? page;
+        try
+        {
+            page = await TransactionsApi.ListAsync(filter, state.Page, state.PageSize, BuildSort(state), cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Uma consulta mais nova substituiu esta; não é um erro.
+            return new GridData<TransactionResponse> { Items = [], TotalItems = 0 };
+        }
+
+        _loadFailed = page is null;
+        _visibleCount = page?.Content.Count ?? 0;
+        StateHasChanged();
+        return new GridData<TransactionResponse> { Items = page?.Content ?? [], TotalItems = (int)(page?.TotalElements ?? 0) };
+    }
+
+    private static string? BuildSort(GridState<TransactionResponse> state)
+    {
+        var definition = state.SortDefinitions.FirstOrDefault();
+        return definition is not null && SortFields.TryGetValue(definition.SortBy, out var field)
+            ? $"{field},{(definition.Descending ? "desc" : "asc")}"
+            : null;
+    }
+
+    private static string FormatDate(DateOnly date) => date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private static Color StatusColor(TransactionStatus status) => status switch
+    {
+        TransactionStatus.COMPLETED => Color.Success,
+        TransactionStatus.PENDING => Color.Warning,
+        _ => Color.Default
+    };
+
+    private Task ReloadAsync() => _grid.ReloadServerData();
+
+    /// <summary>Qualquer filtro novo volta à primeira página.</summary>
+    private async Task ApplyFiltersAsync()
+    {
+        if (_grid.CurrentPage > 0)
+        {
+            _grid.NavigateTo(Page.First);
+        }
+        await _grid.ReloadServerData();
+    }
+
+    private Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        return ApplyFiltersAsync();
+    }
+
+    private Task OnTypeChanged(TransactionType? value)
+    {
+        _type = value;
+        if (_type is not null && _categories.FirstOrDefault(c => c.Id == _categoryId)?.Type != _type.Value.ToCategoryType())
+        {
+            _categoryId = null;
+        }
+        return ApplyFiltersAsync();
+    }
+
+    private Task OnStatusChanged(TransactionStatus? value)
+    {
+        _status = value;
+        return ApplyFiltersAsync();
+    }
+
+    private Task OnCategoryChanged(Guid? value)
+    {
+        _categoryId = value;
+        return ApplyFiltersAsync();
+    }
+
+    private Task OnFromChanged(DateTime? value)
+    {
+        _from = value;
+        return ApplyFiltersAsync();
+    }
+
+    private Task OnToChanged(DateTime? value)
+    {
+        _to = value;
+        return ApplyFiltersAsync();
+    }
+
+    private Task ClearFiltersAsync()
+    {
+        _search = null;
+        _type = null;
+        _status = null;
+        _categoryId = null;
+        _from = null;
+        _to = null;
+        return ApplyFiltersAsync();
+    }
+
+    private async Task OpenDialogAsync(TransactionResponse? transaction)
+    {
+        var parameters = new DialogParameters<TransactionDialog>
+        {
+            { x => x.Transaction, transaction },
+            { x => x.Categories, _categories },
+            { x => x.Accounts, _accounts }
+        };
+        var title = transaction is null ? "Nova movimentação" : "Editar movimentação";
+        var dialog = await Dialogs.ShowAsync<TransactionDialog>(title, parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await _grid.ReloadServerData();
+        }
+    }
+
+    private async Task CompleteAsync(TransactionResponse transaction)
+    {
+        var result = await TransactionsApi.CompleteAsync(transaction.Id);
+        if (result.Success)
+        {
+            Snackbar.Add("Movimentação efetivada.", Severity.Success);
+            await _grid.ReloadServerData();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(TransactionResponse transaction)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir movimentação",
+            $"Excluir \"{transaction.Description}\" de {Money.Format(transaction.Amount)}? Esta ação não pode ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await TransactionsApi.DeleteAsync(transaction.Id);
+        if (!result.Success)
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+            return;
+        }
+
+        Snackbar.Add("Movimentação excluída.", Severity.Success);
+        // O último item de uma página: volta para a anterior em vez de mostrar página vazia.
+        if (_visibleCount == 1 && _grid.CurrentPage > 0)
+        {
+            _grid.NavigateTo(Page.Previous);
+        }
+        await _grid.ReloadServerData();
+    }
+}

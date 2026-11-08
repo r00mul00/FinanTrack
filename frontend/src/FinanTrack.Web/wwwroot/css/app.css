@@ -206,6 +206,31 @@ input:-webkit-autofill:active {
     outline-offset: 2px;
 }
 
+/* Transações */
+.ft-category-icon.small {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.ft-tx-category-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ft-amount-income {
+    color: #20C997;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ft-amount-expense {
+    color: #FF647C;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* Tabelas */
 .ft-grid {
     background-color: transparent;
