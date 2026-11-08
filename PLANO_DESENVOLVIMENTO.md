@@ -20,7 +20,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
-| 4 | Transações | Em andamento (entrega 1: Contas) |
+| 4 | Transações | Em andamento (entrega 2: Categorias) |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
 | 7 | Relatórios e Configurações | Não iniciada |
@@ -203,10 +203,10 @@ Saída: documentos em `docs/`.
 
 **Categorias**
 
-- [ ] 4.2 Criar, editar e excluir, separando receita e despesa.
-- [ ] 4.3 Definir ícones (Material Design) e cores.
-- [ ] 4.3b Criar as categorias padrão no cadastro de novos usuários (movido da Fase 3: depende da tabela de categorias).
-- [ ] 4.4 Aplicar a estratégia de exclusão de categoria em uso (D6).
+- [x] 4.2 Criar, editar e excluir, separando receita e despesa.
+- [x] 4.3 Definir ícones (Material Design) e cores.
+- [x] 4.3b Criar as categorias padrão no cadastro de novos usuários (movido da Fase 3: depende da tabela de categorias).
+- [x] 4.4 Aplicar a estratégia de exclusão de categoria em uso (D6). Cada módulo que referencia categorias implementa `CategoryReferenceHandler`; o primeiro será o de transações.
 
 **Transações**
 

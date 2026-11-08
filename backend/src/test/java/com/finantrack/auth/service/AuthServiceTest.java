@@ -30,13 +30,15 @@ class AuthServiceTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);
     private final EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    private final UserRegistrationService userRegistrationService = mock(UserRegistrationService.class);
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         when(passwordEncoder.encode(anyString())).thenReturn(DUMMY_HASH);
-        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService, emailVerificationService);
+        authService = new AuthService(userRepository, passwordEncoder, refreshTokenService, emailVerificationService,
+                userRegistrationService);
     }
 
     @Test
@@ -89,7 +91,7 @@ class AuthServiceTest {
 
         authService.register(new RegisterRequest("Ana", "ana@exemplo.com", "senha-segura"));
 
-        verify(userRepository, never()).saveAndFlush(any());
+        verify(userRegistrationService, never()).create(any(), any(), any());
         verify(emailVerificationService, never()).sendTo(any());
     }
 }

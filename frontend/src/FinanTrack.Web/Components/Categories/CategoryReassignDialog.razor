@@ -1,0 +1,86 @@
+@attribute [AllowAnonymous]
+@inject CategoryApi Categories
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">
+            A categoria "@Category.Name" está ligada a @References @(References == 1 ? "registro" : "registros").
+            Escolha outra para recebê-@(References == 1 ? "lo" : "los") antes de excluir, ou arquive para manter o histórico.
+        </MudText>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+
+        @if (Destinations.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">Não há outra categoria ativa deste tipo. Crie uma ou arquive esta.</MudAlert>
+        }
+        else
+        {
+            <div class="ft-field">
+                <span class="ft-field-label">Categoria de destino</span>
+                <MudSelect T="Guid?" @bind-Value="_destination" Variant="Variant.Outlined" aria-label="Categoria de destino">
+                    @foreach (var option in Destinations)
+                    {
+                        <MudSelectItem T="Guid?" Value="option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="() => MudDialog.Cancel()">Cancelar</MudButton>
+        <MudButton Disabled="_busy" OnClick="ArchiveAsync">Arquivar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@(_busy || _destination is null)" OnClick="DeleteAsync">
+            Mover e excluir
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private Guid? _destination;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public CategoryResponse Category { get; set; } = default!;
+    [Parameter] public long References { get; set; }
+    [Parameter] public IReadOnlyList<CategoryResponse> Destinations { get; set; } = [];
+
+    private async Task DeleteAsync()
+    {
+        await RunAsync(() => Categories.DeleteAsync(Category.Id, _destination), "Registros movidos e categoria excluída.");
+    }
+
+    private async Task ArchiveAsync()
+    {
+        var request = new CategoryRequest(Category.Name, Category.Type, Category.Icon, Category.Color, Archived: true);
+        await RunAsync(() => Categories.UpdateAsync(Category.Id, request), "Categoria arquivada.");
+    }
+
+    private async Task RunAsync(Func<Task<ApiResult>> action, string successMessage)
+    {
+        if (_busy)
+        {
+            return;
+        }
+        _busy = true;
+        _error = null;
+        var result = await action();
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(successMessage, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

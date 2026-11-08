@@ -53,10 +53,9 @@ Base: `/api/v1`. Exceto em **Autenticação**, todas as rotas exigem `Authorizat
 | Método | Rota | Descrição |
 |---|---|---|
 | GET / POST | `/categories` | Listar (`?type=`); criar |
-| GET / PUT | `/categories/{id}` | Detalhar; editar |
+| GET / PUT | `/categories/{id}` | Detalhar; editar e arquivar (campo `archived`). O tipo não pode mudar (422) |
 | GET | `/categories/{id}/usage` | Quantidade de registros vinculados |
 | DELETE | `/categories/{id}?reassignTo={id}` | Excluir; 409 se em uso sem `reassignTo` |
-| POST | `/categories/{id}/archive` | Arquivar |
 
 ## Transações
 

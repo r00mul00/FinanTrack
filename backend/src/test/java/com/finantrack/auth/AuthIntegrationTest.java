@@ -70,9 +70,7 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        refreshTokenRepository.deleteAll();
-        jdbcTemplate.update("delete from user_tokens");
-        userRepository.deleteAll();
+        jdbcTemplate.execute("truncate table users cascade");
     }
 
     @Test

@@ -1,0 +1,153 @@
+@attribute [AllowAnonymous]
+@inject CategoryApi Categories
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form" Spacing="4">
+            <LabeledTextField @bind-Value="_name" Label="Nome" RequiredError="Informe o nome da categoria." MaxLength="60" />
+
+            <div class="ft-field">
+                <span class="ft-field-label">Tipo</span>
+                <MudSelect T="CategoryType" @bind-Value="_type" Variant="Variant.Outlined" Disabled="Category is not null"
+                           aria-label="Tipo da categoria">
+                    @foreach (var type in Enum.GetValues<CategoryType>())
+                    {
+                        <MudSelectItem Value="type">@type.Label()</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <div class="ft-field">
+                <span class="ft-field-label">Ícone</span>
+                <div class="ft-option-grid">
+                    @foreach (var (key, svg) in CategoryAppearance.Icons)
+                    {
+                        <button type="button" class="ft-icon-option @(key == _icon ? "selected" : "")"
+                                aria-label="Ícone @key" aria-pressed="@(key == _icon ? "true" : "false")"
+                                @onclick="() => _icon = key">
+                            <MudIcon Icon="@svg" Size="Size.Small" />
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="ft-field">
+                <span class="ft-field-label">Cor</span>
+                <div class="ft-option-grid">
+                    @foreach (var color in CategoryAppearance.Colors)
+                    {
+                        <button type="button" class="ft-color-option @(color == _color ? "selected" : "")"
+                                style="background-color: @color;"
+                                aria-label="Cor @color" aria-pressed="@(color == _color ? "true" : "false")"
+                                @onclick="() => _color = color"></button>
+                    }
+                </div>
+            </div>
+
+            @if (Category is not null)
+            {
+                <MudSwitch T="bool" @bind-Value="_archived" Color="Color.Primary" Label="Categoria arquivada" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private string? _name;
+    private CategoryType _type;
+    private string _icon = CategoryAppearance.DefaultIcon;
+    private string _color = CategoryAppearance.DefaultColor;
+    private bool _archived;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nulo ao criar; preenchido ao editar.</summary>
+    [Parameter] public CategoryResponse? Category { get; set; }
+
+    /// <summary>Tipo sugerido ao criar, conforme a aba aberta.</summary>
+    [Parameter] public CategoryType InitialType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _type = Category?.Type ?? InitialType;
+        if (Category is not null)
+        {
+            _name = Category.Name;
+            _icon = Category.Icon;
+            _color = Category.Color;
+            _archived = Category.Archived;
+        }
+    }
+
+    private bool HasChanges =>
+        (_name ?? "") != (Category?.Name ?? "")
+        || _type != (Category?.Type ?? InitialType)
+        || _icon != (Category?.Icon ?? CategoryAppearance.DefaultIcon)
+        || _color != (Category?.Color ?? CategoryAppearance.DefaultColor)
+        || _archived != (Category?.Archived ?? false);
+
+    private async Task CancelAsync()
+    {
+        if (HasChanges)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var request = new CategoryRequest(_name!.Trim(), _type, _icon, _color, _archived);
+        var result = Category is null
+            ? await Categories.CreateAsync(request)
+            : await Categories.UpdateAsync(Category.Id, request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Category is null ? "Categoria criada." : "Categoria atualizada.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

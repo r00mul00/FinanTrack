@@ -60,9 +60,7 @@ class RefreshTokenIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
-        jdbcTemplate.update("delete from user_tokens");
-        userRepository.deleteAll();
+        jdbcTemplate.execute("truncate table users cascade");
         User user = new User("Ana", EMAIL, passwordEncoder.encode(PASSWORD));
         user.markEmailVerified(Instant.now());
         userRepository.save(user);

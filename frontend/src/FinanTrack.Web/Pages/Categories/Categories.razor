@@ -1,0 +1,178 @@
+@page "/categorias"
+@using FinanTrack.Web.Components.Categories
+@inject CategoryApi CategoriesApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Categorias | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Categorias</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="() => OpenDialogAsync(null)">
+        Nova categoria
+    </MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="ft-card pa-4">
+    <MudTabs Elevation="0" @bind-ActivePanelIndex="_tab" Color="Color.Transparent" SliderColor="Color.Primary">
+        <MudTabPanel Text="Despesas" />
+        <MudTabPanel Text="Receitas" />
+    </MudTabs>
+
+    <div class="pt-4">
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error">
+                Não foi possível carregar as categorias.
+                <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+            </MudAlert>
+        }
+        else if (_loading)
+        {
+            <MudGrid Spacing="2">
+                @for (var i = 0; i < 6; i++)
+                {
+                    <MudItem xs="12" sm="6" lg="4"><MudSkeleton Height="64px" /></MudItem>
+                }
+            </MudGrid>
+        }
+        else if (Visible.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="py-4">Nenhuma categoria deste tipo. Crie a primeira em "Nova categoria".</MudText>
+        }
+        else
+        {
+            <MudGrid Spacing="2">
+                @foreach (var category in Visible)
+                {
+                    <MudItem xs="12" sm="6" lg="4">
+                        <div class="ft-category-row @(category.Archived ? "archived" : "")">
+                            <span class="ft-category-icon" style="background-color: @(category.Color)26; color: @category.Color;">
+                                <MudIcon Icon="@CategoryAppearance.IconFor(category.Icon)" Size="Size.Small" />
+                            </span>
+                            <div class="ft-category-name">
+                                <MudText Typo="Typo.body2" Class="ft-ellipsis">@category.Name</MudText>
+                                @if (category.Archived)
+                                {
+                                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">Arquivada</MudText>
+                                }
+                            </div>
+                            <MudTooltip Text="Editar">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
+                                               aria-label="@($"Editar {category.Name}")"
+                                               OnClick="() => OpenDialogAsync(category)" />
+                            </MudTooltip>
+                            <MudTooltip Text="Excluir">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
+                                               aria-label="@($"Excluir {category.Name}")"
+                                               OnClick="() => DeleteAsync(category)" />
+                            </MudTooltip>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private List<CategoryResponse> _categories = [];
+    private int _tab;
+    private bool _loading = true;
+    private bool _loadFailed;
+
+    private CategoryType CurrentType => _tab == 0 ? CategoryType.EXPENSE : CategoryType.INCOME;
+
+    private List<CategoryResponse> Visible => _categories.Where(c => c.Type == CurrentType).ToList();
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadFailed = false;
+        var categories = await CategoriesApi.ListAsync();
+        _categories = categories ?? [];
+        _loadFailed = categories is null;
+        _loading = false;
+    }
+
+    private async Task OpenDialogAsync(CategoryResponse? category)
+    {
+        var parameters = new DialogParameters<CategoryDialog>
+        {
+            { x => x.Category, category },
+            { x => x.InitialType, CurrentType }
+        };
+        var dialog = await Dialogs.ShowAsync<CategoryDialog>(category is null ? "Nova categoria" : "Editar categoria", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task DeleteAsync(CategoryResponse category)
+    {
+        var references = await CategoriesApi.GetUsageAsync(category.Id);
+        if (references is null)
+        {
+            Snackbar.Add("Não foi possível verificar o uso da categoria. Tente novamente.", Severity.Error);
+        }
+        else if (references > 0)
+        {
+            await OpenReassignDialogAsync(category, references.Value);
+        }
+        else
+        {
+            await ConfirmAndDeleteAsync(category);
+        }
+    }
+
+    private async Task OpenReassignDialogAsync(CategoryResponse category, long references)
+    {
+        var destinations = _categories
+            .Where(c => c.Type == category.Type && c.Id != category.Id && !c.Archived)
+            .ToList();
+        var parameters = new DialogParameters<CategoryReassignDialog>
+        {
+            { x => x.Category, category },
+            { x => x.References, references },
+            { x => x.Destinations, destinations }
+        };
+        var dialog = await Dialogs.ShowAsync<CategoryReassignDialog>("Categoria em uso", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task ConfirmAndDeleteAsync(CategoryResponse category)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir categoria", $"Excluir a categoria \"{category.Name}\"? Esta ação não pode ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await CategoriesApi.DeleteAsync(category.Id);
+        if (result.Success)
+        {
+            Snackbar.Add("Categoria excluída.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

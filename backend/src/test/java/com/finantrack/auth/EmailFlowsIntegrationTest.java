@@ -63,9 +63,7 @@ class EmailFlowsIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        refreshTokenRepository.deleteAll();
-        userTokenRepository.deleteAll();
-        userRepository.deleteAll();
+        jdbcTemplate.execute("truncate table users cascade");
     }
 
     @Test

@@ -62,10 +62,7 @@ class AccountIntegrationTest {
 
     @AfterEach
     void clean() {
-        accountRepository.deleteAll();
-        jdbcTemplate.update("delete from refresh_tokens");
-        jdbcTemplate.update("delete from user_tokens");
-        userRepository.deleteAll();
+        jdbcTemplate.execute("truncate table users cascade");
     }
 
     @Test

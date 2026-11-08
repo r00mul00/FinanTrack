@@ -19,11 +19,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final UserRegistrationService userRegistrationService;
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-            RefreshTokenService refreshTokenService, EmailVerificationService emailVerificationService) {
+            RefreshTokenService refreshTokenService, EmailVerificationService emailVerificationService,
+            UserRegistrationService userRegistrationService) {
         this.userRepository = userRepository;
+        this.userRegistrationService = userRegistrationService;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenService = refreshTokenService;
         this.emailVerificationService = emailVerificationService;
@@ -40,7 +43,7 @@ public class AuthService {
         }
         User user;
         try {
-            user = userRepository.saveAndFlush(new User(request.name().trim(), email, passwordHash));
+            user = userRegistrationService.create(request.name().trim(), email, passwordHash);
         } catch (DataIntegrityViolationException duplicateFromConcurrentRequest) {
             return; // Duas requisições simultâneas: o índice único garante um único cadastro.
         }
