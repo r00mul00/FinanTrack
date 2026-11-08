@@ -19,7 +19,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 0 | Preparação do ambiente (acréscimo) | Concluída (Docker adiado, item 0.3b) |
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
-| 3 | Autenticação | Em andamento (entrega 3 de 4) |
+| 3 | Autenticação | Aguardando validação |
 | 4 | Transações | Não iniciada |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
@@ -184,10 +184,10 @@ Saída: documentos em `docs/`.
 
 **Frontend**
 
-- [ ] 3.13 Telas de login, cadastro, recuperação e validação de e-mail.
-- [ ] 3.14 `AuthenticationStateProvider` e proteção de rotas.
-- [ ] 3.15 Renovação automática de sessão no `HttpClient`.
-- [ ] 3.16 Botão Sair: encerra a sessão, invalida o refresh token, remove credenciais e redireciona ao login.
+- [x] 3.13 Telas de login, cadastro, recuperação e validação de e-mail.
+- [x] 3.14 `AuthenticationStateProvider` e proteção de rotas.
+- [x] 3.15 Renovação automática de sessão no `HttpClient`.
+- [x] 3.16 Botão Sair: encerra a sessão, invalida o refresh token, remove credenciais e redireciona ao login.
 
 **Portão de validação:** é possível percorrer cadastro, login, renovação e logout; rota protegida sem autenticação é recusada; refresh token antigo não funciona depois da rotação.
 

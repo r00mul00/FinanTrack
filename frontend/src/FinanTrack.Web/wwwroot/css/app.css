@@ -75,7 +75,73 @@ h1:focus {
     border-top: 1px solid rgba(166, 168, 188, 0.14);
 }
 
+.ft-drawer-user {
+    min-width: 0;
+}
+
+.ft-ellipsis {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Telas de acesso */
+.ft-auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px 16px;
+    background: radial-gradient(circle at top, rgba(124, 77, 255, 0.16), transparent 55%), #10111B;
+}
+
+.ft-auth-column {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* Campos com título acima */
+.ft-field {
+    display: block;
+}
+
+.ft-field-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #F5F5FA;
+}
+
+/* O navegador pinta campos preenchidos automaticamente com fundo próprio e cantos retos. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1B1D2D inset !important;
+    box-shadow: 0 0 0 1000px #1B1D2D inset !important;
+    -webkit-text-fill-color: #F5F5FA !important;
+    caret-color: #F5F5FA;
+    border-radius: 10px !important;
+    transition: background-color 86400s ease-out 0s;
+}
+
 /* Barra superior */
+.ft-avatar-button {
+    display: flex;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+}
+
+.ft-avatar-button:focus-visible {
+    outline: 2px solid #7C4DFF;
+    outline-offset: 2px;
+}
+
 .ft-search {
     max-width: 480px;
 }

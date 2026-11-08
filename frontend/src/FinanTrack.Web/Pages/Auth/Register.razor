@@ -1,0 +1,77 @@
+@page "/cadastro"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@inject AuthApi Auth
+
+<PageTitle>Criar conta | FinanTrack</PageTitle>
+
+<MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-4">Criar conta</MudText>
+
+@if (_done)
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4">
+        Se este e-mail puder ser cadastrado, você receberá um link de confirmação. Ele pode levar alguns segundos para chegar.
+    </MudAlert>
+    <MudLink Href="/login" Typo="Typo.body2">Voltar para o login</MudLink>
+}
+else
+{
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+    }
+    <MudForm @ref="_form" Spacing="4" OnEnterPressed="SubmitAsync">
+        <LabeledTextField @bind-Value="_name" Label="Nome" RequiredError="Informe o nome."
+                          MaxLength="120" Autocomplete="name" />
+        <LabeledTextField @bind-Value="_email" Label="E-mail" InputType="InputType.Email"
+                          RequiredError="Informe o e-mail." Validation="@(AuthRules.Email)" Autocomplete="email" />
+        <PasswordField @bind-Value="_password" Autocomplete="new-password"
+                       Validation="@(AuthRules.NewPassword)" />
+        <PasswordField @bind-Value="_confirmation" Label="Confirmar senha" Autocomplete="new-password"
+                       Validation="@ConfirmMatches" />
+        <SubmitButton Text="Criar conta" Busy="_busy" OnClick="SubmitAsync" />
+    </MudForm>
+    <div class="mt-4">
+        <MudLink Href="/login" Typo="Typo.body2">Já tenho conta</MudLink>
+    </div>
+}
+
+@code {
+    private MudForm _form = default!;
+    private string? _name;
+    private string? _email;
+    private string? _password;
+    private string? _confirmation;
+    private string? _error;
+    private bool _busy;
+    private bool _done;
+
+    private string? ConfirmMatches(string value) => value == _password ? null : "As senhas não conferem.";
+
+    private async Task SubmitAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await Auth.RegisterAsync(new RegisterRequest(_name!.Trim(), _email!.Trim(), _password!));
+        _busy = false;
+
+        if (result.Success)
+        {
+            _done = true;
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

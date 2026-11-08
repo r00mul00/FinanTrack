@@ -1,11 +1,12 @@
 ﻿@page "/"
 @inject ApiHealthService HealthService
+@inject UserApi Users
 
 <PageTitle>Dashboard | FinanTrack</PageTitle>
 
 <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-1">Dashboard</MudText>
 <MudText Typo="Typo.body1" Color="Color.Default" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
-    Controle suas finanças. Conquiste seus objetivos.
+    @(_user is null ? "Controle suas finanças. Conquiste seus objetivos." : $"Olá, {_user.Name}. Controle suas finanças. Conquiste seus objetivos.")
 </MudText>
 
 <MudGrid>
@@ -58,7 +59,13 @@
     private bool _loading = true;
     private ApiHealth _health;
 
-    protected override Task OnInitializedAsync() => CheckAsync();
+    private UserResponse? _user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = await Users.GetCurrentAsync();
+        await CheckAsync();
+    }
 
     private async Task CheckAsync()
     {

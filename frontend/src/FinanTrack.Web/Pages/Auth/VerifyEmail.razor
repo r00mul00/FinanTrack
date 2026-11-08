@@ -1,0 +1,43 @@
+@page "/validar-email"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@inject AuthApi Auth
+
+<PageTitle>Validar e-mail | FinanTrack</PageTitle>
+
+<MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-4">Validar e-mail</MudText>
+
+@if (_busy)
+{
+    <div class="d-flex align-center gap-3">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" />
+        <MudText Typo="Typo.body2">Validando...</MudText>
+    </div>
+}
+else if (_result is { Success: true })
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4">E-mail confirmado. Sua conta está ativa.</MudAlert>
+    <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Ir para o login</MudButton>
+}
+else
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@(_result?.Message ?? "Link inválido.")</MudAlert>
+    <MudText Typo="Typo.body2" Class="mb-2">Para receber um novo link, tente entrar e escolha "Reenviar link".</MudText>
+    <MudLink Href="/login" Typo="Typo.body2">Ir para o login</MudLink>
+}
+
+@code {
+    private bool _busy = true;
+    private ApiResult? _result;
+
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Token))
+        {
+            _result = await Auth.VerifyEmailAsync(Token);
+        }
+        _busy = false;
+    }
+}

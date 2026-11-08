@@ -1,0 +1,27 @@
+@attribute [AllowAnonymous]
+
+<label class="ft-field">
+    <span class="ft-field-label">@Label</span>
+    <MudTextField T="string"
+                  Value="Value"
+                  ValueChanged="ValueChanged"
+                  Variant="Variant.Outlined"
+                  InputType="InputType"
+                  Immediate="true"
+                  Required="true"
+                  RequiredError="@RequiredError"
+                  MaxLength="MaxLength"
+                  Validation="Validation"
+                  autocomplete="@Autocomplete" />
+</label>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public InputType InputType { get; set; } = InputType.Text;
+    [Parameter] public string RequiredError { get; set; } = "Campo obrigatório.";
+    [Parameter] public int MaxLength { get; set; } = 524288;
+    [Parameter] public string? Autocomplete { get; set; }
+    [Parameter] public Func<string, string?>? Validation { get; set; }
+}

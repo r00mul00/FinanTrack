@@ -1,5 +1,7 @@
 ﻿@using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -8,7 +10,14 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @using FinanTrack.Web
+@using FinanTrack.Web.Authentication
+@using FinanTrack.Web.Components
+@using FinanTrack.Web.DTOs
 @using FinanTrack.Web.Layout
 @using FinanTrack.Web.Models
 @using FinanTrack.Web.Services
 @using FinanTrack.Web.Theme
+@using FinanTrack.Web.Validation
+
+@* Toda página exige login, exceto as marcadas com [AllowAnonymous]. *@
+@attribute [Authorize]

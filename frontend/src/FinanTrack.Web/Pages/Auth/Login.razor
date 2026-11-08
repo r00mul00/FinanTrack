@@ -1,0 +1,107 @@
+@page "/login"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@inject AuthSession Session
+@inject AuthApi Auth
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Entrar | FinanTrack</PageTitle>
+
+<MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-4">Entrar</MudText>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+}
+@if (_emailNotVerified)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        Confirme seu e-mail para entrar.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="ResendAsync">Reenviar link</MudLink>
+    </MudAlert>
+}
+
+<MudForm @ref="_form" Spacing="4" OnEnterPressed="SubmitAsync">
+    <LabeledTextField @bind-Value="_email" Label="E-mail" InputType="InputType.Email"
+                      RequiredError="Informe o e-mail." Validation="@(AuthRules.Email)" Autocomplete="username" />
+    <PasswordField @bind-Value="_password" />
+    <SubmitButton Text="Entrar" Busy="_busy" OnClick="SubmitAsync" />
+</MudForm>
+
+<div class="d-flex justify-space-between mt-4">
+    <MudLink Href="/recuperar-senha" Typo="Typo.body2">Esqueci minha senha</MudLink>
+    <MudLink Href="/cadastro" Typo="Typo.body2">Criar conta</MudLink>
+</div>
+
+@code {
+    private MudForm _form = default!;
+    private string? _email;
+    private string? _password;
+    private string? _error;
+    private bool _emailNotVerified;
+    private bool _busy;
+
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Session.InitializeAsync();
+        if (Session.CurrentUser is not null)
+        {
+            Navigation.NavigateTo(SafeReturnUrl, replace: true);
+        }
+    }
+
+    /// <summary>Aceita só caminhos internos, para o link de login não redirecionar a outro site.</summary>
+    private string SafeReturnUrl =>
+        !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith('/')
+        && !ReturnUrl.StartsWith("//") && !ReturnUrl.StartsWith("/\\")
+            ? ReturnUrl
+            : "/";
+
+    private async Task SubmitAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        _emailNotVerified = false;
+        var result = await Session.LoginAsync(_email!.Trim(), _password!);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Navigation.NavigateTo(SafeReturnUrl, replace: true);
+        }
+        else if (result.Code == ApiResult.EmailNotVerified)
+        {
+            _emailNotVerified = true;
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+
+    private async Task ResendAsync()
+    {
+        var result = await Auth.ResendVerificationAsync(_email!.Trim());
+        if (result.Success)
+        {
+            Snackbar.Add("Enviamos um novo link. Ele pode levar alguns segundos para chegar.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

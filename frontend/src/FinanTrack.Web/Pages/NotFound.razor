@@ -1,8 +1,9 @@
 ﻿@page "/not-found"
-@layout MainLayout
+@layout AuthLayout
+@attribute [AllowAnonymous]
 
 <PageTitle>Página não encontrada | FinanTrack</PageTitle>
 
-<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Página não encontrada</MudText>
-<MudText Typo="Typo.body1" Class="mb-4">O conteúdo que você procura não existe.</MudText>
-<MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">Voltar ao Dashboard</MudButton>
+<MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-2">Página não encontrada</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">O conteúdo que você procura não existe.</MudText>
+<MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Voltar ao início</MudButton>
