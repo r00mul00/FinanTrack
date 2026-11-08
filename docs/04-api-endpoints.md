@@ -61,7 +61,7 @@ Base: `/api/v1`. Exceto em **Autenticação**, todas as rotas exigem `Authorizat
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/transactions` | Filtros: `search`, `from`, `to`, `categoryId`, `type`, `status`, `accountId`, `cardId` |
+| GET | `/transactions` | Filtros: `search`, `from`, `to`, `categoryId`, `type`, `status`, `accountId` (`cardId` na Fase 6). Ordenação por `transactionDate`, `amount`, `description`, `status` ou `dueDate`; `size` até 100 |
 | POST | `/transactions` | Criar; com `cardId`, gera compra e parcelas |
 | GET / PUT / DELETE | `/transactions/{id}` | Detalhar, editar, excluir |
 | POST | `/transactions/{id}/complete` | Marcar como efetivada |

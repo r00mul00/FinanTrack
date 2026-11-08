@@ -20,7 +20,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 1 | Planejamento | Concluída |
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
-| 4 | Transações | Em andamento (entrega 2: Categorias) |
+| 4 | Transações | Em andamento (entrega 3: API de Transações) |
 | 5 | Dashboard | Não iniciada |
 | 6 | Recursos financeiros | Não iniciada |
 | 7 | Relatórios e Configurações | Não iniciada |
@@ -199,7 +199,7 @@ Saída: documentos em `docs/`.
 
 **Contas (acréscimo).** A transação exige uma Conta, mas o rascunho não define sua gestão.
 
-- [x] 4.1 CRUD de Conta, com tela em uma aba de Configurações. O saldo atual passa a somar as movimentações no item 4.6, e a exclusão de conta com movimentações é tratada no mesmo item.
+- [x] 4.1 CRUD de Conta, com tela em uma aba de Configurações, saldo calculado pelas movimentações e bloqueio de exclusão de conta com movimentações.
 
 **Categorias**
 
@@ -210,9 +210,9 @@ Saída: documentos em `docs/`.
 
 **Transações**
 
-- [ ] 4.5 Migration com índices para os filtros.
-- [ ] 4.6 API de CRUD com DTOs, Bean Validation e verificação de dono em toda consulta.
-- [ ] 4.7 Pesquisa por descrição; filtros por período, categoria, tipo e status; ordenação e paginação.
+- [x] 4.5 Migration com índices para os filtros.
+- [x] 4.6 API de CRUD com DTOs, Bean Validation e verificação de dono em toda consulta.
+- [x] 4.7 Pesquisa por descrição; filtros por período, categoria, tipo e status; ordenação e paginação.
 - [ ] 4.8 Listagem com `MudDataGrid` e paginação no servidor.
 - [ ] 4.9 Cadastro e edição em `MudDialog`.
 - [ ] 4.10 Pesquisa com debounce e opção de limpar; filtros combináveis e opção de limpar filtros.
