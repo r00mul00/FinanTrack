@@ -1,10 +1,17 @@
+using System.Globalization;
 using FinanTrack.Web;
 using FinanTrack.Web.Authentication;
+using FinanTrack.Web.Models;
 using FinanTrack.Web.Services;
+using FinanTrack.Web.State;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+
+// Formato brasileiro por padrão; JSON e URLs usam formatos invariantes explícitos.
+CultureInfo.DefaultThreadCurrentCulture = BrazilianCulture.Instance;
+CultureInfo.DefaultThreadCurrentUICulture = BrazilianCulture.Instance;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -31,7 +38,8 @@ builder.Services.AddHttpClient(HttpClients.Public, client => client.BaseAddress 
 builder.Services.AddHttpClient(HttpClients.Api, client => client.BaseAddress = apiBaseAddress)
     .AddHttpMessageHandler<AuthorizationHandler>();
 
-builder.Services.AddHttpClient<ApiHealthService>(client => client.BaseAddress = apiBaseAddress);
+builder.Services.AddScoped<PeriodState>();
+builder.Services.AddScoped<DashboardApi>();
 builder.Services.AddScoped<AuthApi>();
 builder.Services.AddScoped<UserApi>();
 builder.Services.AddScoped<AccountApi>();

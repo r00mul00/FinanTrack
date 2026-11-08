@@ -1,76 +1,112 @@
 ﻿@page "/"
-@inject ApiHealthService HealthService
+@using FinanTrack.Web.Components.Dashboard
+@using Microsoft.AspNetCore.Components.Sections
+@inject DashboardApi Dashboard
+@inject TransactionApi Transactions
 @inject UserApi Users
+@inject PeriodState Period
+@implements IDisposable
 
 <PageTitle>Dashboard | FinanTrack</PageTitle>
 
-<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-1">Dashboard</MudText>
-<MudText Typo="Typo.body1" Color="Color.Default" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<SectionContent SectionName="@MainLayout.TopBarActions">
+    <PeriodSelector />
+</SectionContent>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-1">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Dashboard</MudText>
+    <div class="d-md-none"><PeriodSelector /></div>
+</div>
+<MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
     @(_user is null ? "Controle suas finanças. Conquiste seus objetivos." : $"Olá, {_user.Name}. Controle suas finanças. Conquiste seus objetivos.")
 </MudText>
 
-<MudGrid>
-    <MudItem xs="12" sm="6" md="4">
-        <MudPaper Elevation="0" Class="ft-card pa-5">
-            <MudText Typo="Typo.subtitle1" Class="mb-3">Status da API</MudText>
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar todos os dados.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
 
-            @if (_loading)
-            {
-                <MudSkeleton Width="60%" Height="32px" />
-            }
-            else
-            {
-                var online = _health == ApiHealth.Online;
-                <div class="d-flex align-center gap-2">
-                    <span class="ft-status-dot @(online ? "up" : "down")"></span>
-                    <MudText Typo="Typo.h6">@(online ? "Conectada" : "Indisponível")</MudText>
-                </div>
-                @if (!online)
-                {
-                    <MudText Typo="Typo.body2" Class="mt-1" Style="color: var(--mud-palette-text-secondary);">
-                        Não foi possível falar com o backend.
-                    </MudText>
-                }
-            }
-
-            <MudButton Class="mt-4"
-                       Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       Size="Size.Small"
-                       StartIcon="@Icons.Material.Rounded.Refresh"
-                       Disabled="_loading"
-                       OnClick="CheckAsync">
-                Verificar novamente
-            </MudButton>
-        </MudPaper>
+<MudGrid Spacing="3">
+    <MudItem xs="12" sm="6" lg="3">
+        <StatCard Title="Saldo total" Icon="@Icons.Material.Rounded.AccountBalance" Value="_summary?.TotalBalance"
+                  ShowChange="false" Caption="Contas ativas, valores efetivados" />
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <StatCard Title="Receitas" Icon="@Icons.Material.Rounded.ArrowDownward" Value="_summary?.Income" Change="_summary?.IncomeChange" />
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <StatCard Title="Despesas" Icon="@Icons.Material.Rounded.ArrowUpward" Value="_summary?.Expenses" Change="_summary?.ExpensesChange" HigherIsBetter="false" />
+    </MudItem>
+    <MudItem xs="12" sm="6" lg="3">
+        <StatCard Title="Resultado" Icon="@Icons.Material.Rounded.Balance" Value="_summary?.Result" Change="_summary?.ResultChange" />
     </MudItem>
 
-    <MudItem xs="12" sm="6" md="8">
-        <MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">Indicadores financeiros</MudText>
-            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
-                Saldo, receitas, despesas e gráficos aparecem aqui na Fase 5, calculados com os dados reais do usuário.
-            </MudText>
-        </MudPaper>
+    <MudItem xs="12" lg="8">
+        <IncomeExpenseChart Data="_series" />
+    </MudItem>
+    <MudItem xs="12" lg="4">
+        <CategoryDonut Data="_categories" />
+    </MudItem>
+
+    <MudItem xs="12">
+        <RecentTransactions Items="_recent" />
     </MudItem>
 </MudGrid>
 
 @code {
-    private bool _loading = true;
-    private ApiHealth _health;
+    private const int RecentCount = 5;
 
     private UserResponse? _user;
+    private DashboardSummaryResponse? _summary;
+    private IncomeVsExpenseResponse? _series;
+    private List<CategoryExpenseResponse>? _categories;
+    private List<TransactionResponse>? _recent;
+    private bool _loadFailed;
+    private int _loadId;
 
     protected override async Task OnInitializedAsync()
     {
+        Period.Changed += OnPeriodChanged;
         _user = await Users.GetCurrentAsync();
-        await CheckAsync();
+        await LoadAsync();
     }
 
-    private async Task CheckAsync()
+    private void OnPeriodChanged() => InvokeAsync(LoadAsync);
+
+    private async Task LoadAsync()
     {
-        _loading = true;
-        _health = await HealthService.GetAsync();
-        _loading = false;
+        var loadId = ++_loadId;
+        _loadFailed = false;
+        _summary = null;
+        _series = null;
+        _categories = null;
+        _recent = null;
+        StateHasChanged();
+
+        var (from, to) = (Period.From, Period.To);
+        var filter = new TransactionFilter(null, null, null, null, from, to);
+        var summary = Dashboard.GetSummaryAsync(from, to);
+        var series = Dashboard.GetIncomeVsExpenseAsync(from, to);
+        var categories = Dashboard.GetExpensesByCategoryAsync(from, to);
+        var recent = Transactions.ListAsync(filter, 0, RecentCount, null);
+        await Task.WhenAll(summary, series, categories, recent);
+
+        // Se o período mudou durante a consulta, só a resposta mais nova é exibida.
+        if (loadId != _loadId)
+        {
+            return;
+        }
+
+        _summary = summary.Result;
+        _series = series.Result;
+        _categories = categories.Result;
+        _recent = recent.Result?.Content;
+        _loadFailed = _summary is null || _series is null || _categories is null || _recent is null;
+        StateHasChanged();
     }
+
+    public void Dispose() => Period.Changed -= OnPeriodChanged;
 }

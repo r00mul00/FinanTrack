@@ -21,7 +21,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
-| 5 | Dashboard | Em andamento (entrega 1: API de indicadores) |
+| 5 | Dashboard | Aguardando validação |
 | 6 | Recursos financeiros | Não iniciada |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
@@ -229,13 +229,13 @@ Saída: documentos em `docs/`.
 **Objetivo:** indicadores calculados com dados reais do usuário autenticado.
 
 - [x] 5.1 Endpoints agregados por período, com consultas eficientes.
-- [ ] 5.2 Saldo total, receitas do mês, despesas do mês e resultado financeiro.
-- [ ] 5.3 Comparação com o mês anterior.
-- [ ] 5.4 Gráfico de receitas versus despesas.
-- [ ] 5.5 Gráfico de despesas por categoria.
-- [ ] 5.6 Últimas transações.
-- [ ] 5.7 Seletor de período atualizando todos os componentes dependentes.
-- [ ] 5.8 Estados de carregamento (`MudSkeleton`) e estado vazio.
+- [x] 5.2 Saldo total, receitas do mês, despesas do mês e resultado financeiro.
+- [x] 5.3 Comparação com o mês anterior.
+- [x] 5.4 Gráfico de receitas versus despesas.
+- [x] 5.5 Gráfico de despesas por categoria.
+- [x] 5.6 Últimas transações.
+- [x] 5.7 Seletor de período atualizando todos os componentes dependentes.
+- [x] 5.8 Estados de carregamento (`MudSkeleton`) e estado vazio.
 - [x] 5.9 Testes dos cálculos, incluindo a exclusão de pendentes do saldo realizado.
 
 > Metas, próximos vencimentos e alertas de orçamento dependem da Fase 6 e são concluídos no item 6.24.

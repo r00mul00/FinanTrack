@@ -1,0 +1,61 @@
+@attribute [AllowAnonymous]
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <div class="ft-field mb-4">
+            <span class="ft-field-label">De</span>
+            <MudDatePicker @bind-Date="_from" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy"
+                           Culture="BrazilianCulture.Instance" AutoClose="true" />
+        </div>
+        <div class="ft-field">
+            <span class="ft-field-label">Até</span>
+            <MudDatePicker @bind-Date="_to" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy"
+                           Culture="BrazilianCulture.Instance" AutoClose="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Apply">Aplicar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private DateTime? _from;
+    private DateTime? _to;
+    private string? _error;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public DateOnly From { get; set; }
+    [Parameter] public DateOnly To { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _from = From.ToDateTime(TimeOnly.MinValue);
+        _to = To.ToDateTime(TimeOnly.MinValue);
+    }
+
+    private void Apply()
+    {
+        if (_from is null || _to is null)
+        {
+            _error = "Informe as duas datas.";
+        }
+        else if (_from > _to)
+        {
+            _error = "A data inicial não pode ser posterior à data final.";
+        }
+        else if (_from.Value.AddYears(5) < _to.Value)
+        {
+            _error = "O período não pode ser maior que 5 anos.";
+        }
+        else
+        {
+            MudDialog.Close(DialogResult.Ok((DateOnly.FromDateTime(_from.Value), DateOnly.FromDateTime(_to.Value))));
+        }
+    }
+}

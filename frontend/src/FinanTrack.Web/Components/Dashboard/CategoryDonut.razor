@@ -1,0 +1,72 @@
+@attribute [AllowAnonymous]
+@using MudBlazor.Charts
+
+<MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Despesas por categoria</MudText>
+
+    @if (Data is null)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Circle" Width="180px" Height="180px" Class="mx-auto" />
+    }
+    else if (Data.Count == 0)
+    {
+        <div class="ft-chart-empty">Sem despesas efetivadas neste período.</div>
+    }
+    else
+    {
+        <div class="ft-donut" role="img" aria-label="Distribuição das despesas por categoria; os valores estão na lista ao lado do gráfico.">
+            <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="Series" ChartLabels="Slices.Select(s => s.Name).ToArray()"
+                      ChartOptions="Options" Height="190px" Width="190px" />
+        </div>
+        <ul class="ft-legend">
+            @foreach (var slice in Slices)
+            {
+                <li>
+                    <span class="ft-legend-dot" style="background-color: @slice.Color;"></span>
+                    <span class="ft-legend-name">@slice.Name</span>
+                    <span class="ft-legend-value">@Money.Format(slice.Amount)</span>
+                    <span class="ft-legend-percent">@slice.Percentage.ToString("0.0", Money.Culture)%</span>
+                </li>
+            }
+        </ul>
+    }
+</MudPaper>
+
+@code {
+    private const int MaxSlices = 7;
+    private const string OthersColor = "#6B6E85";
+
+    private sealed record Slice(string Name, string Color, decimal Amount, decimal Percentage);
+
+    [Parameter] public List<CategoryExpenseResponse>? Data { get; set; }
+
+    /// <summary>Cada fatia usa a cor da categoria; as menores se juntam em "Demais".</summary>
+    private List<Slice> Slices
+    {
+        get
+        {
+            var slices = Data!.Take(MaxSlices).Select(c => new Slice(c.Name, c.Color, c.Amount, c.Percentage)).ToList();
+            var rest = Data!.Skip(MaxSlices).ToList();
+            if (rest.Count > 0)
+            {
+                slices.Add(new Slice("Demais", OthersColor, rest.Sum(c => c.Amount), rest.Sum(c => c.Percentage)));
+            }
+            return slices;
+        }
+    }
+
+    private List<ChartSeries<double>> Series =>
+    [
+        new()
+        {
+            Name = "Despesas", Data = Slices.Select(s => (double)s.Amount).ToArray(),
+            TooltipTitleFormat = "{{X_VALUE}}: R$ {{Y_VALUE}}", TooltipYValueFormat = "N2"
+        }
+    ];
+
+    private DonutChartOptions Options => new()
+    {
+        ChartPalette = Slices.Select(s => s.Color).ToArray(),
+        ShowLegend = false
+    };
+}

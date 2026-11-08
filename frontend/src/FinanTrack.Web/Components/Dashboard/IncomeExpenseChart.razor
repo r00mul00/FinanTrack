@@ -1,0 +1,115 @@
+@attribute [AllowAnonymous]
+@using System.Globalization
+@using MudBlazor.Charts
+
+<MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+    <div class="d-flex justify-space-between align-center mb-2">
+        <MudText Typo="Typo.subtitle1">Receitas x Despesas</MudText>
+        @if (Data is { Points.Count: > 0 })
+        {
+            <MudTooltip Text="@(_showTable ? "Ver gráfico" : "Ver tabela")">
+                <MudIconButton Icon="@(_showTable ? Icons.Material.Rounded.BarChart : Icons.Material.Rounded.TableChart)" Size="Size.Small"
+                               aria-label="@(_showTable ? "Ver gráfico" : "Ver tabela")" OnClick="() => _showTable = !_showTable" />
+            </MudTooltip>
+        }
+    </div>
+
+    @if (Data is null)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="300px" />
+    }
+    else if (!HasValues)
+    {
+        <div class="ft-chart-empty">Sem receitas ou despesas efetivadas neste período.</div>
+    }
+    else if (_showTable)
+    {
+        <div class="ft-chart-table">
+            <MudSimpleTable Dense="true" Elevation="0" FixedHeader="true">
+                <thead><tr><th>Período</th><th>Receitas</th><th>Despesas</th></tr></thead>
+                <tbody>
+                    @foreach (var point in Data.Points.Where(p => p.Income != 0 || p.Expenses != 0))
+                    {
+                        <tr>
+                            <td>@Label(point.Date, full: true)</td>
+                            <td>@Money.Format(point.Income)</td>
+                            <td>@Money.Format(point.Expenses)</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </div>
+    }
+    else
+    {
+        <div class="ft-chart" role="img" aria-label="@Summary">
+            <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="Series" ChartLabels="Labels" ChartOptions="_options"
+                      Height="300px" Width="100%" LegendPosition="Position.Bottom" />
+        </div>
+    }
+</MudPaper>
+
+@code {
+    private const string TooltipTitle = "{{SERIES_NAME}}: R$ {{Y_VALUE}}";
+    private const string TooltipValue = "N2";
+
+    /// <summary>
+    /// Roxo e magenta, validados para daltonismo sobre a superfície escura. Verde e
+    /// vermelho ficam reservados aos estados de sucesso e erro.
+    /// </summary>
+    private static readonly string[] Palette = ["#7C4DFF", "#D6409F"];
+
+    private readonly BarChartOptions _options = new()
+    {
+        ChartPalette = Palette,
+        MaxNumYAxisTicks = 6,
+        XAxisLines = false,
+        YAxisToStringFunc = CompactMoney
+    };
+
+    private bool _showTable;
+
+    [Parameter] public IncomeVsExpenseResponse? Data { get; set; }
+
+    private bool IsDaily => Data?.Granularity == "DAY";
+    private bool HasValues => Data!.Points.Any(p => p.Income != 0 || p.Expenses != 0);
+
+    // decimal vira double apenas para desenhar; nenhum cálculo financeiro usa estes valores.
+    private List<ChartSeries<double>> Series =>
+    [
+        new()
+        {
+            Name = "Receitas", Data = Data!.Points.Select(p => (double)p.Income).ToArray(),
+            TooltipTitleFormat = TooltipTitle, TooltipYValueFormat = TooltipValue
+        },
+        new()
+        {
+            Name = "Despesas", Data = Data!.Points.Select(p => (double)p.Expenses).ToArray(),
+            TooltipTitleFormat = TooltipTitle, TooltipYValueFormat = TooltipValue
+        }
+    ];
+
+    /// <summary>Rótulos espaçados, para as datas não colidirem no eixo.</summary>
+    private string[] Labels
+    {
+        get
+        {
+            var step = Math.Max(1, Data!.Points.Count / 7);
+            return Data.Points.Select((p, i) => i % step == 0 ? Label(p.Date, full: false) : "").ToArray();
+        }
+    }
+
+    private string Summary =>
+        $"Gráfico de receitas e despesas. Total de receitas: {Money.Format(Data!.Points.Sum(p => p.Income))}. Total de despesas: {Money.Format(Data.Points.Sum(p => p.Expenses))}.";
+
+    private string Label(DateOnly date, bool full) => IsDaily
+        ? date.ToString(full ? "dd/MM/yyyy" : "dd/MM", CultureInfo.InvariantCulture)
+        : date.ToString("MMM/yy", BrazilianCulture.Instance);
+
+    private static string CompactMoney(double value) => value switch
+    {
+        >= 1_000_000 => (value / 1_000_000).ToString("0.#", BrazilianCulture.Instance) + " mi",
+        >= 1_000 => (value / 1_000).ToString("0.#", BrazilianCulture.Instance) + " mil",
+        _ => value.ToString("0", BrazilianCulture.Instance)
+    };
+}

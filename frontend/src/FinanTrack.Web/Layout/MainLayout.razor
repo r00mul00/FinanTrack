@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @attribute [AllowAnonymous]
+@using Microsoft.AspNetCore.Components.Sections
 @inject AuthSession Session
 @inject NavigationManager Navigation
 
@@ -28,6 +29,9 @@
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Rounded.Search"
                                   Disabled="true" />
+                </div>
+                <div class="d-none d-md-flex mr-2">
+                    <SectionOutlet SectionName="@TopBarActions" />
                 </div>
                 <MudTooltip Text="Notificações: disponível na Fase 6">
                     <MudIconButton Icon="@Icons.Material.Rounded.Notifications" Color="Color.Inherit" Disabled="true" aria-label="Notificações" />
@@ -90,6 +94,9 @@
 </AuthorizeView>
 
 @code {
+    /// <summary>Área da barra superior preenchida pelas páginas, como o seletor de período.</summary>
+    public const string TopBarActions = "top-bar-actions";
+
     private bool _drawerOpen = true;
     private bool _loggingOut;
 

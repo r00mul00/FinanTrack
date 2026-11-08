@@ -1,0 +1,76 @@
+@attribute [AllowAnonymous]
+@using System.Globalization
+@inject PeriodState Period
+@inject IDialogService Dialogs
+@implements IDisposable
+
+<div class="ft-period-selector">
+    @if (Period.Preset == PeriodPreset.Custom)
+    {
+        <MudTooltip Text="Alterar datas">
+            <MudIconButton Icon="@Icons.Material.Rounded.EditCalendar" Size="Size.Small" aria-label="Alterar datas do período" OnClick="OpenCustomAsync" />
+        </MudTooltip>
+    }
+    <MudSelect @key="_selectKey" T="PeriodPreset" Value="Period.Preset" ValueChanged="OnPresetChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+               ToStringFunc="Label" aria-label="Período" AnchorOrigin="Origin.BottomLeft">
+        <MudSelectItem Value="PeriodPreset.ThisMonth">Este mês</MudSelectItem>
+        <MudSelectItem Value="PeriodPreset.LastMonth">Mês anterior</MudSelectItem>
+        <MudSelectItem Value="PeriodPreset.LastThreeMonths">Últimos 3 meses</MudSelectItem>
+        <MudSelectItem Value="PeriodPreset.ThisYear">Este ano</MudSelectItem>
+        <MudSelectItem Value="PeriodPreset.Custom">Personalizado</MudSelectItem>
+    </MudSelect>
+</div>
+
+@code {
+    private int _selectKey;
+
+    protected override void OnInitialized() => Period.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private string Label(PeriodPreset preset) => preset switch
+    {
+        PeriodPreset.LastMonth => "Mês anterior",
+        PeriodPreset.LastThreeMonths => "Últimos 3 meses",
+        PeriodPreset.ThisYear => "Este ano",
+        PeriodPreset.Custom => $"{Short(Period.From)} a {Short(Period.To)}",
+        _ => "Este mês"
+    };
+
+    private static string Short(DateOnly date) => date.ToString("dd/MM/yy", CultureInfo.InvariantCulture);
+
+    private async Task OnPresetChanged(PeriodPreset preset)
+    {
+        if (preset == PeriodPreset.Custom)
+        {
+            await OpenCustomAsync();
+        }
+        else
+        {
+            Period.Select(preset);
+        }
+    }
+
+    private async Task OpenCustomAsync()
+    {
+        var parameters = new DialogParameters<PeriodDialog>
+        {
+            { x => x.From, Period.From },
+            { x => x.To, Period.To }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await Dialogs.ShowAsync<PeriodDialog>("Período personalizado", parameters, options);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: ValueTuple<DateOnly, DateOnly> range })
+        {
+            Period.SelectCustom(range.Item1, range.Item2);
+        }
+        else
+        {
+            // O MudSelect guarda a opção clicada; recriá-lo volta a mostrar o período atual.
+            _selectKey++;
+        }
+    }
+
+    public void Dispose() => Period.Changed -= Refresh;
+}

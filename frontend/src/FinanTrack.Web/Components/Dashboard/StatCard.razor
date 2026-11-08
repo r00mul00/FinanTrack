@@ -1,0 +1,58 @@
+@attribute [AllowAnonymous]
+
+<MudPaper Elevation="0" Class="ft-card ft-stat pa-5">
+    <div class="d-flex justify-space-between align-center">
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">@Title</MudText>
+        <MudIcon Icon="@Icon" Size="Size.Small" Style="color: var(--mud-palette-text-secondary);" />
+    </div>
+    @if (Value is null)
+    {
+        <MudSkeleton Width="70%" Height="40px" />
+        <MudSkeleton Width="50%" />
+    }
+    else
+    {
+        <MudText Typo="Typo.h5" Class="ft-stat-value mt-2">@Money.Format(Value.Value)</MudText>
+        <div class="ft-stat-change">
+            @if (!ShowChange)
+            {
+                <span>@Caption</span>
+            }
+            else if (Change is null)
+            {
+                <span>Sem base de comparação</span>
+            }
+            else
+            {
+                <MudIcon Icon="@ChangeIcon" Size="Size.Small" Color="@ChangeColor" />
+                <span><strong>@FormatChange(Change.Value)</strong> vs período anterior</span>
+            }
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+    [Parameter] public decimal? Value { get; set; }
+    [Parameter] public decimal? Change { get; set; }
+    [Parameter] public bool ShowChange { get; set; } = true;
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>Em despesas, subir é ruim: a cor segue o significado, não o sinal.</summary>
+    [Parameter] public bool HigherIsBetter { get; set; } = true;
+
+    private string ChangeIcon => Change switch
+    {
+        > 0 => Icons.Material.Rounded.TrendingUp,
+        < 0 => Icons.Material.Rounded.TrendingDown,
+        _ => Icons.Material.Rounded.TrendingFlat
+    };
+
+    private Color ChangeColor => Change == 0
+        ? Color.Default
+        : (Change > 0) == HigherIsBetter ? Color.Success : Color.Error;
+
+    private static string FormatChange(decimal value) =>
+        value.ToString("+0.0;-0.0;0.0", Money.Culture) + "%";
+}

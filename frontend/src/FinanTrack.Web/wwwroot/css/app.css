@@ -231,6 +231,123 @@ input:-webkit-autofill:active {
     white-space: nowrap;
 }
 
+/* Dashboard */
+.ft-period-selector {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 220px;
+}
+
+.ft-stat {
+    height: 100%;
+}
+
+.ft-stat-value {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ft-stat-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.8125rem;
+    color: #A6A8BC;
+}
+
+.ft-stat-change strong {
+    color: #F5F5FA;
+    font-weight: 600;
+}
+
+.ft-chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 16px;
+    text-align: center;
+    color: #A6A8BC;
+}
+
+.ft-chart-empty.small {
+    min-height: 100px;
+}
+
+.ft-chart svg text {
+    fill: #A6A8BC;
+}
+
+/* O SVG tem largura interna fixa: em telas estreitas, rola em vez de encolher os rótulos. */
+@media (max-width: 720px) {
+    .ft-chart {
+        overflow-x: auto;
+    }
+
+    .ft-chart > * {
+        min-width: 620px;
+    }
+}
+
+.ft-chart-table {
+    max-height: 300px;
+    overflow: auto;
+}
+
+.ft-donut {
+    display: flex;
+    justify-content: center;
+}
+
+.ft-legend {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ft-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 0.8125rem;
+}
+
+.ft-legend-dot {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.ft-legend-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.ft-legend-value {
+    white-space: nowrap;
+}
+
+.ft-legend-percent {
+    width: 48px;
+    text-align: right;
+    color: #A6A8BC;
+}
+
+.ft-recent-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(166, 168, 188, 0.10);
+}
+
 /* Tabelas */
 .ft-grid {
     background-color: transparent;
