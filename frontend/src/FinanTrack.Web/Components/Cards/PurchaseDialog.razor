@@ -1,0 +1,132 @@
+@attribute [AllowAnonymous]
+@inject CardApi Cards
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">
+            Limite disponível: <strong>@Money.Format(Card.AvailableLimit)</strong>
+        </MudText>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <LabeledTextField @bind-Value="_description" Label="Descrição" RequiredError="Informe a descrição." MaxLength="180" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-pur-amount">
+                        <span class="ft-field-label">Valor total (R$)</span>
+                        <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
+                                         Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor." />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-pur-installments">
+                        <span class="ft-field-label">Parcelas</span>
+                        <MudNumericField T="int" @bind-Value="_installments" Variant="Variant.Outlined" Min="1" Max="48"
+                                         HideSpinButtons="true" Immediate="true" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-pur-category">
+                        <span class="ft-field-label">Categoria</span>
+                        <MudSelect T="Guid?" @bind-Value="_categoryId" Variant="Variant.Outlined" aria-label="Categoria"
+                                   Required="true" RequiredError="Selecione a categoria." ToStringFunc="CategoryName">
+                            @foreach (var category in Categories)
+                            {
+                                <MudSelectItem T="Guid?" Value="category.Id">@category.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-pur-date">
+                        <span class="ft-field-label">Data da compra</span>
+                        <MudDatePicker @bind-Date="_date" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                                       AutoClose="true" Required="true" RequiredError="Informe a data." />
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private string? _description;
+    private decimal? _amount;
+    private int _installments = 1;
+    private Guid? _categoryId;
+    private DateTime? _date = DateTime.Today;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public CardResponse Card { get; set; } = default!;
+    [Parameter] public IReadOnlyList<CategoryResponse> Categories { get; set; } = [];
+
+    private string CategoryName(Guid? id) => Categories.FirstOrDefault(c => c.Id == id)?.Name ?? "";
+
+    private bool HasChanges => !string.IsNullOrEmpty(_description) || _amount is not null || _installments != 1
+        || _categoryId is not null || _date != DateTime.Today;
+
+    private async Task CancelAsync()
+    {
+        if (HasChanges)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await Cards.CreatePurchaseAsync(Card.Id, new PurchaseRequest(
+            _description!.Trim(), _amount!.Value, _installments, _categoryId!.Value, DateOnly.FromDateTime(_date!.Value)));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Compra registrada.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

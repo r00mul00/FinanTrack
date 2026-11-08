@@ -22,7 +22,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 3: Cartões, API pronta; falta a tela) |
+| 6 | Recursos financeiros | Em andamento (bloco 3: Cartões) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
@@ -266,12 +266,12 @@ Saída: documentos em `docs/`.
 
 **Cartões**
 
-- [ ] 6.11 Cadastro: apelido, bandeira, quatro últimos dígitos, limite, dia de fechamento e dia de vencimento.
-- [ ] 6.12 Garantir que número completo, CVV e senha nunca sejam aceitos nem armazenados.
-- [ ] 6.13 Compras parceladas distribuídas entre as faturas, com tratamento de arredondamento.
-- [ ] 6.14 Geração e consulta de faturas, respeitando o dia de fechamento e meses curtos.
-- [ ] 6.15 Registro de pagamentos e cálculo do limite disponível.
-- [ ] 6.16 Testes de limite, parcelamento e faturas.
+- [x] 6.11 Cadastro: apelido, bandeira, quatro últimos dígitos, limite, dia de fechamento e dia de vencimento.
+- [x] 6.12 Garantir que número completo, CVV e senha nunca sejam aceitos nem armazenados.
+- [x] 6.13 Compras parceladas distribuídas entre as faturas, com tratamento de arredondamento.
+- [x] 6.14 Geração e consulta de faturas, respeitando o dia de fechamento e meses curtos.
+- [x] 6.15 Registro de pagamentos e cálculo do limite disponível.
+- [x] 6.16 Testes de limite, parcelamento e faturas.
 
 **Contas recorrentes**
 

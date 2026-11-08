@@ -1,5 +1,6 @@
 @attribute [AllowAnonymous]
 @inject TransactionApi Transactions
+@inject CardApi CardsApi
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 
@@ -50,18 +51,47 @@
                     </div>
                 </MudItem>
 
-                <MudItem xs="12" sm="6">
-                    <div class="ft-field ft-tx-account">
-                        <span class="ft-field-label">Conta</span>
-                        <MudSelect T="Guid?" @bind-Value="_accountId" Variant="Variant.Outlined" aria-label="Conta"
-                                   Required="true" RequiredError="Selecione a conta." ToStringFunc="AccountName">
-                            @foreach (var account in AccountOptions)
-                            {
-                                <MudSelectItem T="Guid?" Value="account.Id">@account.Name</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </div>
-                </MudItem>
+                @if (CanUseCard)
+                {
+                    <MudItem xs="12" sm="6">
+                        <div class="ft-field ft-tx-card">
+                            <span class="ft-field-label">Cartão (opcional)</span>
+                            <MudSelect T="Guid?" @bind-Value="_cardId" Variant="Variant.Outlined" aria-label="Cartão"
+                                       Placeholder="Não usar cartão" Clearable="true" ToStringFunc="CardName">
+                                @foreach (var card in Cards)
+                                {
+                                    <MudSelectItem T="Guid?" Value="card.Id">@card.Nickname (final @card.LastFour)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                    </MudItem>
+                }
+
+                @if (UsesCard)
+                {
+                    <MudItem xs="12" sm="6">
+                        <div class="ft-field ft-tx-installments">
+                            <span class="ft-field-label">Parcelas</span>
+                            <MudNumericField T="int" @bind-Value="_installments" Variant="Variant.Outlined" Min="1" Max="48"
+                                             HideSpinButtons="true" Immediate="true" />
+                        </div>
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12" sm="6">
+                        <div class="ft-field ft-tx-account">
+                            <span class="ft-field-label">Conta</span>
+                            <MudSelect T="Guid?" @bind-Value="_accountId" Variant="Variant.Outlined" aria-label="Conta"
+                                       Required="true" RequiredError="Selecione a conta." ToStringFunc="AccountName">
+                                @foreach (var account in AccountOptions)
+                                {
+                                    <MudSelectItem T="Guid?" Value="account.Id">@account.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                    </MudItem>
+                }
 
                 <MudItem xs="12" sm="6">
                     <div class="ft-field ft-tx-date">
@@ -71,32 +101,35 @@
                     </div>
                 </MudItem>
 
-                <MudItem xs="12" sm="6">
-                    <div class="ft-field ft-tx-due">
-                        <span class="ft-field-label">Vencimento (opcional)</span>
-                        <MudDatePicker @bind-Date="_dueDate" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
-                                       AutoClose="true" Clearable="true" />
-                    </div>
-                </MudItem>
+                @if (!UsesCard)
+                {
+                    <MudItem xs="12" sm="6">
+                        <div class="ft-field ft-tx-due">
+                            <span class="ft-field-label">Vencimento (opcional)</span>
+                            <MudDatePicker @bind-Date="_dueDate" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                                           AutoClose="true" Clearable="true" />
+                        </div>
+                    </MudItem>
 
-                <MudItem xs="12" sm="6">
-                    <div class="ft-field ft-tx-status">
-                        <span class="ft-field-label">Status</span>
-                        <MudSelect T="TransactionStatus" @bind-Value="_status" Variant="Variant.Outlined" aria-label="Status">
-                            @foreach (var status in Enum.GetValues<TransactionStatus>())
-                            {
-                                <MudSelectItem Value="status">@status.Label()</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </div>
-                </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <div class="ft-field ft-tx-status">
+                            <span class="ft-field-label">Status</span>
+                            <MudSelect T="TransactionStatus" @bind-Value="_status" Variant="Variant.Outlined" aria-label="Status">
+                                @foreach (var status in Enum.GetValues<TransactionStatus>())
+                                {
+                                    <MudSelectItem Value="status">@status.Label()</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                    </MudItem>
 
-                <MudItem xs="12">
-                    <div class="ft-field ft-tx-notes">
-                        <span class="ft-field-label">Observações (opcional)</span>
-                        <MudTextField T="string" @bind-Value="_notes" Variant="Variant.Outlined" Lines="2" MaxLength="1000" Immediate="true" />
-                    </div>
-                </MudItem>
+                    <MudItem xs="12">
+                        <div class="ft-field ft-tx-notes">
+                            <span class="ft-field-label">Observações (opcional)</span>
+                            <MudTextField T="string" @bind-Value="_notes" Variant="Variant.Outlined" Lines="2" MaxLength="1000" Immediate="true" />
+                        </div>
+                    </MudItem>
+                }
             </MudGrid>
         </MudForm>
     </DialogContent>
@@ -114,7 +147,10 @@
 
 @code {
     private sealed record Snapshot(string Description, decimal? Amount, TransactionType Type, Guid? CategoryId, Guid? AccountId,
-        DateTime? Date, DateTime? DueDate, TransactionStatus Status, string Notes);
+        DateTime? Date, DateTime? DueDate, TransactionStatus Status, string Notes, Guid? CardId, int Installments);
+
+    private Guid? _cardId;
+    private int _installments = 1;
 
     private MudForm _form = default!;
     private string? _description;
@@ -136,6 +172,14 @@
     [Parameter] public TransactionResponse? Transaction { get; set; }
     [Parameter] public IReadOnlyList<CategoryResponse> Categories { get; set; } = [];
     [Parameter] public IReadOnlyList<AccountResponse> Accounts { get; set; } = [];
+    [Parameter] public IReadOnlyList<CardResponse> Cards { get; set; } = [];
+
+    /// <summary>Cartão só existe no cadastro de despesas; parcelas são geridas em Cartões.</summary>
+    private bool CanUseCard => Transaction is null && _type == TransactionType.EXPENSE && Cards.Count > 0;
+
+    private bool UsesCard => CanUseCard && _cardId is not null;
+
+    private string CardName(Guid? id) => Cards.FirstOrDefault(c => c.Id == id)?.Nickname ?? "";
 
     /// <summary>Itens arquivados só aparecem se a movimentação já os utiliza.</summary>
     private IEnumerable<CategoryResponse> CategoryOptions => Categories.Where(c =>
@@ -170,13 +214,14 @@
     }
 
     private Snapshot Current() =>
-        new(_description ?? "", _amount, _type, _categoryId, _accountId, _date, _dueDate, _status, _notes ?? "");
+        new(_description ?? "", _amount, _type, _categoryId, _accountId, _date, _dueDate, _status, _notes ?? "", _cardId, _installments);
 
     /// <summary>A categoria selecionada deixa de valer quando o tipo muda.</summary>
     private void OnTypeChanged(TransactionType type)
     {
         _type = type;
         _categoryId = null;
+        _cardId = null;
     }
 
     private async Task CancelAsync()
@@ -208,6 +253,24 @@
 
         _busy = true;
         _error = null;
+
+        if (UsesCard)
+        {
+            var purchase = await CardsApi.CreatePurchaseAsync(_cardId!.Value, new PurchaseRequest(
+                _description!.Trim(), _amount!.Value, _installments, _categoryId!.Value, DateOnly.FromDateTime(_date!.Value)));
+            _busy = false;
+            if (purchase.Success)
+            {
+                Snackbar.Add("Compra registrada no cartão.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                _error = purchase.Message;
+            }
+            return;
+        }
+
         var request = new TransactionRequest(
             _description!.Trim(), _amount!.Value, _type, _status, _categoryId!.Value, _accountId!.Value,
             DateOnly.FromDateTime(_date!.Value),

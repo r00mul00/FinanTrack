@@ -4,6 +4,7 @@
 @inject TransactionApi TransactionsApi
 @inject CategoryApi CategoriesApi
 @inject AccountApi AccountsApi
+@inject CardApi CardsApi
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 
@@ -120,10 +121,14 @@
                             @context.Item.CategoryName
                         </span>
                     }
+                    else
+                    {
+                        <text>Fatura de cartão</text>
+                    }
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn T="TransactionResponse" Title="Conta" Sortable="false">
-                <CellTemplate>@context.Item.AccountName</CellTemplate>
+                <CellTemplate>@(context.Item.AccountName ?? "Cartão de crédito")</CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Amount" Title="Valor">
                 <CellTemplate>
@@ -139,6 +144,14 @@
             </PropertyColumn>
             <TemplateColumn T="TransactionResponse" Title="Ações" Sortable="false">
                 <CellTemplate>
+                    @if (context.Item.Kind != TransactionKind.STANDARD)
+                    {
+                        <MudTooltip Text="Gerenciada na área de cartões">
+                            <MudIconButton Icon="@Icons.Material.Rounded.CreditCard" Size="Size.Small" Href="/cartoes"
+                                           aria-label="@($"Abrir cartões: {context.Item.Description}")" />
+                        </MudTooltip>
+                        return;
+                    }
                     @if (context.Item.Status == TransactionStatus.PENDING)
                     {
                         <MudTooltip Text="Marcar como efetivada">
@@ -192,6 +205,7 @@
     private MudDataGrid<TransactionResponse> _grid = default!;
     private List<CategoryResponse> _categories = [];
     private List<AccountResponse> _accounts = [];
+    private List<CardResponse> _cards = [];
     private bool _ready;
     private bool _loadFailed;
     private int _visibleCount;
@@ -218,8 +232,10 @@
     {
         var categories = CategoriesApi.ListAsync();
         var accounts = AccountsApi.ListAsync();
+        var cards = CardsApi.ListAsync();
         _categories = await categories ?? [];
         _accounts = await accounts ?? [];
+        _cards = (await cards ?? []).Where(c => !c.Archived).ToList();
         _ready = true;
     }
 
@@ -332,7 +348,8 @@
         {
             { x => x.Transaction, transaction },
             { x => x.Categories, _categories },
-            { x => x.Accounts, _accounts }
+            { x => x.Accounts, _accounts },
+            { x => x.Cards, _cards }
         };
         var title = transaction is null ? "Nova movimentação" : "Editar movimentação";
         var dialog = await Dialogs.ShowAsync<TransactionDialog>(title, parameters, Options);

@@ -1,0 +1,20 @@
+@attribute [AllowAnonymous]
+
+<MudProgressLinear Class="my-3" Rounded="true" Size="Size.Medium" Color="Color.Primary" Value="@Percent"
+                   aria-label="@($"Limite utilizado de {Card.Nickname}: {Money.Format(Card.UsedLimit)}")" />
+<div class="d-flex justify-space-between flex-wrap gap-1">
+    <div>
+        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">Utilizado</MudText>
+        <MudText Typo="Typo.body2">@Money.Format(Card.UsedLimit)</MudText>
+    </div>
+    <div class="ft-text-right">
+        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">Disponível de @Money.Format(Card.CreditLimit)</MudText>
+        <MudText Typo="Typo.body2">@Money.Format(Card.AvailableLimit)</MudText>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardResponse Card { get; set; } = default!;
+
+    private double Percent => (double)Math.Min(Card.UsedLimit / Card.CreditLimit * 100m, 100m);
+}

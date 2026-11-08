@@ -1,0 +1,128 @@
+@page "/cartoes"
+@using FinanTrack.Web.Components.Cards
+@inject CardApi CardsApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Cartões | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Cartões</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="() => OpenDialogAsync(null)">
+        Novo cartão
+    </MudButton>
+</div>
+
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar os cartões.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
+else if (_cards is null)
+{
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" /></MudItem>
+    </MudGrid>
+}
+else if (_cards.Count == 0)
+{
+    <MudPaper Elevation="0" Class="ft-card pa-8 d-flex flex-column align-center">
+        <MudIcon Icon="@Icons.Material.Rounded.CreditCard" Size="Size.Large" Color="Color.Primary" Class="mb-3" />
+        <MudText Typo="Typo.body1">Nenhum cartão cadastrado.</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Cadastre o primeiro em "Novo cartão".</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var card in _cards)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="@($"ft-card pa-4 ft-credit-card {(card.Archived ? "archived" : "")}")">
+                    <div class="d-flex align-center gap-2">
+                        <span class="ft-category-icon" style="background-color: #7C4DFF26; color: #B39BFF;">
+                            <MudIcon Icon="@Icons.Material.Rounded.CreditCard" Size="Size.Small" />
+                        </span>
+                        <div class="ft-category-name">
+                            <MudText Typo="Typo.subtitle1" Class="ft-ellipsis">@card.Nickname</MudText>
+                            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                @card.Brand.Label() · final @card.LastFour@(card.Archived ? " · Arquivado" : "")
+                            </MudText>
+                        </div>
+                        <MudTooltip Text="Editar">
+                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {card.Nickname}")" OnClick="() => OpenDialogAsync(card)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Excluir">
+                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {card.Nickname}")" OnClick="() => DeleteAsync(card)" />
+                        </MudTooltip>
+                    </div>
+
+                    <CardLimitBar Card="card" />
+
+                    <div class="d-flex justify-space-between align-center flex-wrap gap-2 mt-3">
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            Fecha dia @card.ClosingDay · vence dia @card.DueDay
+                        </MudText>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Href="@($"/cartoes/{card.Id}")">Ver faturas</MudButton>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private List<CardResponse>? _cards;
+    private bool _loadFailed;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loadFailed = false;
+        _cards = await CardsApi.ListAsync();
+        _loadFailed = _cards is null;
+    }
+
+    private async Task OpenDialogAsync(CardResponse? card)
+    {
+        var parameters = new DialogParameters<CardDialog> { { x => x.Card, card } };
+        var dialog = await Dialogs.ShowAsync<CardDialog>(card is null ? "Novo cartão" : "Editar cartão", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task DeleteAsync(CardResponse card)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir cartão", $"Excluir o cartão \"{card.Nickname}\" (final {card.LastFour})? Esta ação não pode ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await CardsApi.DeleteAsync(card.Id);
+        if (result.Success)
+        {
+            Snackbar.Add("Cartão excluído.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

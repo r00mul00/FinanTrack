@@ -1,0 +1,223 @@
+@page "/cartoes/{Id:guid}"
+@using System.Globalization
+@using FinanTrack.Web.Components.Cards
+@inject CardApi CardsApi
+@inject AccountApi AccountsApi
+@inject CategoryApi CategoriesApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_card?.Nickname ?? "Cartão") | FinanTrack</PageTitle>
+
+<MudLink Href="/cartoes" Typo="Typo.body2" Class="d-inline-flex align-center mb-2">
+    <MudIcon Icon="@Icons.Material.Rounded.ChevronLeft" Size="Size.Small" /> Cartões
+</MudLink>
+
+@if (_notFound)
+{
+    <MudAlert Severity="Severity.Error">Cartão não encontrado.</MudAlert>
+}
+else if (_card is null)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="160px" />
+}
+else
+{
+    <div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-4">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1">@_card.Nickname</MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                @_card.Brand.Label() · final @_card.LastFour · fecha dia @_card.ClosingDay · vence dia @_card.DueDay
+            </MudText>
+        </div>
+        @if (!_card.Archived)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="OpenPurchaseAsync">Nova compra</MudButton>
+        }
+    </div>
+
+    <MudPaper Elevation="0" Class="ft-card pa-4 mb-4">
+        <CardLimitBar Card="_card" />
+    </MudPaper>
+
+    <MudPaper Elevation="0" Class="ft-card pa-4">
+        <MudTabs Elevation="0" Color="Color.Transparent" SliderColor="Color.Primary">
+            <MudTabPanel Text="Faturas">
+                <div class="pt-4">
+                    @if (_invoices is { Count: 0 })
+                    {
+                        <MudText Typo="Typo.body2" Class="py-4">Nenhuma fatura ainda. Elas surgem com a primeira compra.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var invoice in _invoices ?? [])
+                        {
+                            <div class="ft-invoice-row">
+                                <div class="ft-category-name">
+                                    <MudText Typo="Typo.body1">@MonthTitle(invoice.ReferenceMonth)</MudText>
+                                    <span class="ft-budget-state">
+                                        <MudIcon Icon="@invoice.Status.Icon()" Size="Size.Small" Color="@invoice.Status.Color()" />
+                                        @invoice.Status.Label() · vence @Format(invoice.DueDate)
+                                    </span>
+                                </div>
+                                <div class="ft-text-right">
+                                    <MudText Typo="Typo.body2">@Money.Format(invoice.TotalAmount)</MudText>
+                                    @if (invoice.PaidAmount > 0 && invoice.RemainingAmount > 0)
+                                    {
+                                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">restam @Money.Format(invoice.RemainingAmount)</MudText>
+                                    }
+                                </div>
+                                <div class="ft-invoice-actions">
+                                    <MudTooltip Text="Ver compras">
+                                        <MudIconButton Icon="@Icons.Material.Rounded.ReceiptLong" Size="Size.Small"
+                                                       aria-label="@($"Ver fatura {invoice.ReferenceMonth}")" OnClick="() => OpenInvoiceAsync(invoice)" />
+                                    </MudTooltip>
+                                    @if (invoice.RemainingAmount > 0)
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                                   aria-label="@($"Pagar fatura {invoice.ReferenceMonth}")" OnClick="() => OpenPaymentAsync(invoice)">Pagar</MudButton>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </MudTabPanel>
+            <MudTabPanel Text="Compras">
+                <div class="pt-4">
+                    @if (_purchases is { Count: 0 })
+                    {
+                        <MudText Typo="Typo.body2" Class="py-4">Nenhuma compra registrada.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var purchase in _purchases ?? [])
+                        {
+                            <div class="@($"ft-invoice-row {(purchase.Canceled ? "ft-canceled" : "")}")">
+                                <div class="ft-category-name">
+                                    <MudText Typo="Typo.body2" Class="ft-ellipsis">@purchase.Description</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                        @Format(purchase.PurchaseDate) · @(purchase.Installments == 1 ? "à vista" : $"{purchase.Installments}x")@(purchase.Canceled ? " · Cancelada" : "")
+                                    </MudText>
+                                </div>
+                                <span>@Money.Format(purchase.TotalAmount)</span>
+                                @if (!purchase.Canceled)
+                                {
+                                    <MudTooltip Text="Cancelar compra">
+                                        <MudIconButton Icon="@Icons.Material.Rounded.Cancel" Size="Size.Small" Color="Color.Error"
+                                                       aria-label="@($"Cancelar compra {purchase.Description}")" OnClick="() => CancelPurchaseAsync(purchase)" />
+                                    </MudTooltip>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </MudTabPanel>
+        </MudTabs>
+    </MudPaper>
+}
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private CardResponse? _card;
+    private List<InvoiceResponse>? _invoices;
+    private List<PurchaseResponse>? _purchases;
+    private List<AccountResponse> _accounts = [];
+    private List<CategoryResponse> _categories = [];
+    private bool _notFound;
+
+    [Parameter] public Guid Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var accounts = AccountsApi.ListAsync();
+        var categories = CategoriesApi.ListAsync();
+        _accounts = await accounts ?? [];
+        _categories = await categories ?? [];
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var card = CardsApi.GetAsync(Id);
+        var invoices = CardsApi.ListInvoicesAsync(Id);
+        var purchases = CardsApi.ListPurchasesAsync(Id);
+        _card = await card;
+        _invoices = await invoices;
+        _purchases = (await purchases)?.Content;
+        _notFound = _card is null;
+    }
+
+    private static string Format(DateOnly date) => date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private static string MonthTitle(string month) =>
+        DateOnly.ParseExact(month, "yyyy-MM", CultureInfo.InvariantCulture).ToString("MMMM 'de' yyyy", BrazilianCulture.Instance);
+
+    private async Task OpenPurchaseAsync()
+    {
+        var parameters = new DialogParameters<PurchaseDialog>
+        {
+            { x => x.Card, _card! },
+            { x => x.Categories, _categories.Where(c => c.Type == CategoryType.EXPENSE && !c.Archived).ToList() }
+        };
+        var dialog = await Dialogs.ShowAsync<PurchaseDialog>("Nova compra", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task OpenPaymentAsync(InvoiceResponse invoice)
+    {
+        var parameters = new DialogParameters<PaymentDialog>
+        {
+            { x => x.CardId, Id },
+            { x => x.Invoice, invoice },
+            { x => x.Accounts, _accounts.Where(a => !a.Archived).ToList() }
+        };
+        var dialog = await Dialogs.ShowAsync<PaymentDialog>($"Pagar fatura de {MonthTitle(invoice.ReferenceMonth)}", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task OpenInvoiceAsync(InvoiceResponse invoice)
+    {
+        var parameters = new DialogParameters<InvoiceDialog>
+        {
+            { x => x.CardId, Id },
+            { x => x.InvoiceId, invoice.Id }
+        };
+        await Dialogs.ShowAsync<InvoiceDialog>($"Fatura de {MonthTitle(invoice.ReferenceMonth)}", parameters, Options);
+    }
+
+    private async Task CancelPurchaseAsync(PurchaseResponse purchase)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Cancelar compra", $"Cancelar \"{purchase.Description}\" de {Money.Format(purchase.TotalAmount)}? O limite será liberado.",
+            yesText: "Cancelar compra", cancelText: "Voltar");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await CardsApi.CancelPurchaseAsync(Id, purchase.Id);
+        if (result.Success)
+        {
+            Snackbar.Add("Compra cancelada.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

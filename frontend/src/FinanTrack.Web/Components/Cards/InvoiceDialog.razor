@@ -1,0 +1,57 @@
+@attribute [AllowAnonymous]
+@using System.Globalization
+@inject CardApi Cards
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudSkeleton Height="48px" />
+            <MudSkeleton Height="48px" />
+        }
+        else if (_detail is null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">Não foi possível carregar a fatura.</MudAlert>
+        }
+        else if (_detail.Lines.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="py-4">Nenhuma compra nesta fatura.</MudText>
+        }
+        else
+        {
+            <div class="ft-history">
+                @foreach (var line in _detail.Lines)
+                {
+                    <div class="ft-recent-row">
+                        <div class="ft-category-name">
+                            <MudText Typo="Typo.body2" Class="ft-ellipsis">@line.Description</MudText>
+                            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                @line.PurchaseDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)@(line.Installments > 1 ? $" · parcela {line.Number}/{line.Installments}" : "")
+                            </MudText>
+                        </div>
+                        <span>@Money.Format(line.Amount)</span>
+                    </div>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private InvoiceDetailResponse? _detail;
+    private bool _loading = true;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid CardId { get; set; }
+    [Parameter] public Guid InvoiceId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _detail = await Cards.GetInvoiceAsync(CardId, InvoiceId);
+        _loading = false;
+    }
+}

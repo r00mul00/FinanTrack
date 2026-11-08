@@ -1,0 +1,166 @@
+@attribute [AllowAnonymous]
+@inject CardApi Cards
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+            Por segurança, guardamos apenas os quatro últimos dígitos. Nunca informe o número completo, o CVV ou a senha.
+        </MudAlert>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <LabeledTextField @bind-Value="_nickname" Label="Apelido" RequiredError="Informe o apelido do cartão." MaxLength="60" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-card-brand">
+                        <span class="ft-field-label">Bandeira</span>
+                        <MudSelect T="CardBrand" @bind-Value="_brand" Variant="Variant.Outlined" aria-label="Bandeira">
+                            @foreach (var brand in Enum.GetValues<CardBrand>())
+                            {
+                                <MudSelectItem Value="brand">@brand.Label()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-card-last">
+                        <LabeledTextField @bind-Value="_lastFour" Label="Últimos 4 dígitos" RequiredError="Informe os quatro últimos dígitos."
+                                          MaxLength="4" Validation="@ValidateLastFour" Autocomplete="off" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                    <div class="ft-field ft-card-limit">
+                        <span class="ft-field-label">Limite (R$)</span>
+                        <MudNumericField T="decimal?" @bind-Value="_limit" Variant="Variant.Outlined"
+                                         Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o limite." />
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="ft-field ft-card-closing">
+                        <span class="ft-field-label">Dia de fechamento</span>
+                        <MudNumericField T="int?" @bind-Value="_closingDay" Variant="Variant.Outlined" Min="1" Max="31"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o dia." />
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="ft-field ft-card-due">
+                        <span class="ft-field-label">Dia de vencimento</span>
+                        <MudNumericField T="int?" @bind-Value="_dueDay" Variant="Variant.Outlined" Min="1" Max="31"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o dia." />
+                    </div>
+                </MudItem>
+                @if (Card is not null)
+                {
+                    <MudItem xs="12">
+                        <MudSwitch T="bool" @bind-Value="_archived" Color="Color.Primary" Label="Cartão arquivado" />
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            Novos dias de fechamento e vencimento valem só para faturas ainda não criadas.
+                        </MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private sealed record Snapshot(string Nickname, CardBrand Brand, string LastFour, decimal? Limit, int? ClosingDay, int? DueDay, bool Archived);
+
+    private MudForm _form = default!;
+    private string? _nickname;
+    private CardBrand _brand = CardBrand.VISA;
+    private string? _lastFour;
+    private decimal? _limit;
+    private int? _closingDay;
+    private int? _dueDay;
+    private bool _archived;
+    private string? _error;
+    private bool _busy;
+    private Snapshot _snapshot = default!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nulo ao criar; preenchido ao editar.</summary>
+    [Parameter] public CardResponse? Card { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Card is not null)
+        {
+            _nickname = Card.Nickname;
+            _brand = Card.Brand;
+            _lastFour = Card.LastFour;
+            _limit = Card.CreditLimit;
+            _closingDay = Card.ClosingDay;
+            _dueDay = Card.DueDay;
+            _archived = Card.Archived;
+        }
+        _snapshot = Current();
+    }
+
+    private Snapshot Current() => new(_nickname ?? "", _brand, _lastFour ?? "", _limit, _closingDay, _dueDay, _archived);
+
+    private static string? ValidateLastFour(string value) =>
+        value is { Length: 4 } && value.All(char.IsAsciiDigit) ? null : "Informe apenas os quatro últimos dígitos.";
+
+    private async Task CancelAsync()
+    {
+        if (Current() != _snapshot)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var request = new CardRequest(_nickname!.Trim(), _brand, _lastFour!, _limit!.Value, _closingDay!.Value, _dueDay!.Value, _archived);
+        var result = Card is null ? await Cards.CreateAsync(request) : await Cards.UpdateAsync(Card.Id, request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Card is null ? "Cartão cadastrado." : "Cartão atualizado.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

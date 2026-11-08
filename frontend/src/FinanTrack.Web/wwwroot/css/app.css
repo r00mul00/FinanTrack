@@ -374,6 +374,38 @@ input:-webkit-autofill:active {
     overflow-y: auto;
 }
 
+/* Cartões */
+.ft-credit-card.archived {
+    opacity: 0.6;
+}
+
+.ft-text-right {
+    text-align: right;
+}
+
+.ft-invoice-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(166, 168, 188, 0.10);
+}
+
+.ft-invoice-row:first-child {
+    border-top: 0;
+}
+
+.ft-invoice-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ft-canceled {
+    opacity: 0.55;
+}
+
 /* Tabelas */
 .ft-grid {
     background-color: transparent;

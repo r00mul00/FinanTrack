@@ -23,13 +23,13 @@
         @foreach (var item in Items)
         {
             <div class="ft-recent-row">
-                <span class="ft-category-icon small" style="background-color: @(item.CategoryColor)26; color: @item.CategoryColor;">
-                    <MudIcon Icon="@CategoryAppearance.IconFor(item.CategoryIcon ?? "")" Size="Size.Small" />
+                <span class="ft-category-icon small" style="background-color: @(item.CategoryColor ?? NeutralColor)26; color: @(item.CategoryColor ?? NeutralColor);">
+                    <MudIcon Icon="@(item.CategoryIcon is null ? Icons.Material.Rounded.CreditCard : CategoryAppearance.IconFor(item.CategoryIcon))" Size="Size.Small" />
                 </span>
                 <div class="ft-category-name">
                     <MudText Typo="Typo.body2" Class="ft-ellipsis">@item.Description</MudText>
                     <MudText Typo="Typo.caption" Class="ft-ellipsis" Style="color: var(--mud-palette-text-secondary);">
-                        @item.CategoryName · @item.TransactionDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)@(item.Status == TransactionStatus.COMPLETED ? "" : $" · {item.Status.Label()}")
+                        @(item.CategoryName ?? "Fatura de cartão") · @item.TransactionDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)@(item.Status == TransactionStatus.COMPLETED ? "" : $" · {item.Status.Label()}")
                     </MudText>
                 </div>
                 <span class="@(item.Type == TransactionType.INCOME ? "ft-amount-income" : "ft-amount-expense")">
@@ -41,5 +41,7 @@
 </MudPaper>
 
 @code {
+    private const string NeutralColor = "#A6A8BC";
+
     [Parameter] public IReadOnlyList<TransactionResponse>? Items { get; set; }
 }

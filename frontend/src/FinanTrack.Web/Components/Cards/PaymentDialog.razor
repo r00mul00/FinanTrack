@@ -1,0 +1,113 @@
+@attribute [AllowAnonymous]
+@inject CardApi Cards
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">
+            Restante da fatura: <strong>@Money.Format(Invoice.RemainingAmount)</strong>. O pagamento pode ser parcial.
+        </MudText>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form" Spacing="4">
+            <div class="ft-field ft-pay-account">
+                <span class="ft-field-label">Conta</span>
+                <MudSelect T="Guid?" @bind-Value="_accountId" Variant="Variant.Outlined" aria-label="Conta"
+                           Required="true" RequiredError="Selecione a conta." ToStringFunc="AccountName">
+                    @foreach (var account in Accounts)
+                    {
+                        <MudSelectItem T="Guid?" Value="account.Id">@account.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="ft-field ft-pay-amount">
+                <span class="ft-field-label">Valor (R$)</span>
+                <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
+                                 Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                 HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor."
+                                 Validation="@(new Func<decimal?, string?>(ValidateAmount))" />
+            </div>
+            <div class="ft-field ft-pay-date">
+                <span class="ft-field-label">Data do pagamento</span>
+                <MudDatePicker @bind-Date="_date" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                               AutoClose="true" Required="true" RequiredError="Informe a data." />
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="() => MudDialog.Cancel()">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Registrar pagamento
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private Guid? _accountId;
+    private decimal? _amount;
+    private DateTime? _date = DateTime.Today;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid CardId { get; set; }
+    [Parameter, EditorRequired] public InvoiceResponse Invoice { get; set; } = default!;
+    [Parameter] public IReadOnlyList<AccountResponse> Accounts { get; set; } = [];
+
+    protected override void OnInitialized()
+    {
+        _amount = Invoice.RemainingAmount;
+        if (Accounts.Count == 1)
+        {
+            _accountId = Accounts[0].Id;
+        }
+    }
+
+    private string AccountName(Guid? id) => Accounts.FirstOrDefault(a => a.Id == id)?.Name ?? "";
+
+    private string? ValidateAmount(decimal? value)
+    {
+        if (value is null || value <= 0)
+        {
+            return "O valor deve ser maior que zero.";
+        }
+        return value > Invoice.RemainingAmount ? "O pagamento é maior que o restante da fatura." : null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await Cards.PayAsync(CardId, Invoice.Id,
+            new PaymentRequest(_accountId!.Value, _amount!.Value, DateOnly.FromDateTime(_date!.Value)));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Pagamento registrado.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

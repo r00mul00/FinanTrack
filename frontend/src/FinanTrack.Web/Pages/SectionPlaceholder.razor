@@ -1,4 +1,3 @@
-@page "/cartoes"
 @page "/recorrencias"
 @page "/relatorios"
 @inject NavigationManager Navigation
@@ -17,7 +16,6 @@
 @code {
     private static readonly Dictionary<string, (string Title, string Phase)> Sections = new()
     {
-        ["cartoes"] = ("Cartões", "Fase 6"),
         ["recorrencias"] = ("Contas recorrentes", "Fase 6"),
         ["relatorios"] = ("Relatórios", "Fase 7")
     };
