@@ -1,0 +1,59 @@
+@attribute [AllowAnonymous]
+@using System.Globalization
+@inject GoalApi Goals
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudSkeleton Height="48px" />
+            <MudSkeleton Height="48px" />
+        }
+        else if (_movements is null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">Não foi possível carregar o histórico.</MudAlert>
+        }
+        else if (_movements.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="py-4">Nenhuma movimentação registrada nesta meta.</MudText>
+        }
+        else
+        {
+            <div class="ft-history">
+                @foreach (var movement in _movements)
+                {
+                    var deposit = movement.Type == GoalMovementType.DEPOSIT;
+                    <div class="ft-recent-row">
+                        <MudIcon Icon="@(deposit ? Icons.Material.Rounded.ArrowDownward : Icons.Material.Rounded.ArrowUpward)" Size="Size.Small"
+                                 Color="@(deposit ? Color.Success : Color.Error)" />
+                        <div class="ft-category-name">
+                            <MudText Typo="Typo.body2">@(deposit ? "Depósito" : "Retirada")</MudText>
+                            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                @movement.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)@(movement.Note is null ? "" : $" · {movement.Note}")
+                            </MudText>
+                        </div>
+                        <span class="@(deposit ? "ft-amount-income" : "ft-amount-expense")">@(deposit ? "+" : "-") @Money.Format(movement.Amount)</span>
+                    </div>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<GoalMovementResponse>? _movements;
+    private bool _loading = true;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public GoalResponse Goal { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _movements = (await Goals.GetMovementsAsync(Goal.Id))?.Content;
+        _loading = false;
+    }
+}

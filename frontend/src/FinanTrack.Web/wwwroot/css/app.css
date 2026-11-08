@@ -368,6 +368,12 @@ input:-webkit-autofill:active {
     color: #A6A8BC;
 }
 
+/* Metas */
+.ft-history {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
 /* Tabelas */
 .ft-grid {
     background-color: transparent;

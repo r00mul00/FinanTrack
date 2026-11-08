@@ -12,7 +12,7 @@
 | `/transacoes` | Transações | MainLayout |
 | `/categorias` | Categorias | MainLayout |
 | `/orcamentos` | Orçamentos | MainLayout |
-| `/metas`, `/metas/{id}` | Metas e histórico | MainLayout |
+| `/metas` | Metas; o histórico abre em diálogo | MainLayout |
 | `/cartoes`, `/cartoes/{id}` | Cartões, faturas, compras | MainLayout |
 | `/recorrencias` | Contas recorrentes | MainLayout |
 | `/relatorios` | Relatórios | MainLayout |

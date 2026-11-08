@@ -1,0 +1,102 @@
+@attribute [AllowAnonymous]
+@inject GoalApi Goals
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">
+            Saldo disponível na meta: <strong>@Money.Format(Goal.CurrentAmount)</strong>
+        </MudText>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form" Spacing="4">
+            <div class="ft-field ft-move-amount">
+                <span class="ft-field-label">Valor (R$)</span>
+                <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
+                                 Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                 HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor."
+                                 Validation="@(new Func<decimal?, string?>(ValidateAmount))" />
+            </div>
+            <div class="ft-field ft-move-note">
+                <span class="ft-field-label">Observação (opcional)</span>
+                <MudTextField T="string" @bind-Value="_note" Variant="Variant.Outlined" MaxLength="200" Immediate="true" />
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="() => MudDialog.Cancel()">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            @(IsDeposit ? "Adicionar" : "Retirar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = default!;
+    private decimal? _amount;
+    private string? _note;
+    private string? _error;
+    private bool _busy;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public GoalResponse Goal { get; set; } = default!;
+    [Parameter] public GoalMovementType Type { get; set; }
+
+    private bool IsDeposit => Type == GoalMovementType.DEPOSIT;
+
+    private string? ValidateAmount(decimal? value)
+    {
+        if (value is null || value <= 0)
+        {
+            return "O valor deve ser maior que zero.";
+        }
+        return !IsDeposit && value > Goal.CurrentAmount ? "A retirada é maior que o saldo disponível." : null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (!IsDeposit)
+        {
+            var confirmed = await Dialogs.ShowMessageBoxAsync(
+                "Confirmar retirada", $"Retirar {Money.Format(_amount!.Value)} da meta \"{Goal.Name}\"?",
+                yesText: "Confirmar retirada", cancelText: "Voltar");
+            if (confirmed != true)
+            {
+                return;
+            }
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await Goals.MoveAsync(Goal.Id, Type, new GoalMovementRequest(_amount!.Value, _note));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(IsDeposit ? "Valor adicionado à meta." : "Valor retirado da meta.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

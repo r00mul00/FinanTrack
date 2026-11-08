@@ -72,6 +72,8 @@ progresso = min(current_amount / target_amount × 100, 100)
 - Retirada acima de `current_amount` responde 422.
 - Meta concluída não aceita movimentações.
 - Alcançar o valor não conclui a meta automaticamente: o usuário confirma.
+- Editar o valor inicial desloca o saldo pela mesma diferença e é recusado se o saldo ficaria negativo.
+- O prazo não pode estar no passado ao criar; prazo vencido em meta ativa é sinalizado.
 - **Movimentar uma meta não altera o saldo das contas:** a meta é uma reserva de controle, sem transferência real.
 
 ## Cartões

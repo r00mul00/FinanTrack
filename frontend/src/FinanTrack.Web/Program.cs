@@ -46,6 +46,11 @@ builder.Services.AddScoped<AccountApi>();
 builder.Services.AddScoped<CategoryApi>();
 builder.Services.AddScoped<TransactionApi>();
 builder.Services.AddScoped<BudgetApi>();
-builder.Services.AddMudServices();
+builder.Services.AddScoped<GoalApi>();
+builder.Services.AddMudServices(config =>
+{
+    // No canto inferior, os avisos não cobrem o botão principal das páginas.
+    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+});
 
 await builder.Build().RunAsync();

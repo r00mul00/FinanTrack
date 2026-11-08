@@ -22,7 +22,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 1: Orçamentos) |
+| 6 | Recursos financeiros | Em andamento (bloco 2: Metas) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
@@ -257,12 +257,12 @@ Saída: documentos em `docs/`.
 
 **Metas financeiras**
 
-- [ ] 6.5 CRUD com nome, descrição, valor desejado, valor inicial e prazo.
-- [ ] 6.6 Adicionar valor, com validação de valor positivo.
-- [ ] 6.7 Retirar valor, com confirmação e bloqueio acima do saldo da meta.
-- [ ] 6.8 Histórico de movimentações e marcação como concluída.
-- [ ] 6.9 Barras de progresso e percentual concluído.
-- [ ] 6.10 Testes, incluindo retiradas simultâneas.
+- [x] 6.5 CRUD com nome, descrição, valor desejado, valor inicial e prazo.
+- [x] 6.6 Adicionar valor, com validação de valor positivo.
+- [x] 6.7 Retirar valor, com confirmação e bloqueio acima do saldo da meta.
+- [x] 6.8 Histórico de movimentações e marcação como concluída.
+- [x] 6.9 Barras de progresso e percentual concluído.
+- [x] 6.10 Testes, incluindo retiradas simultâneas.
 
 **Cartões**
 

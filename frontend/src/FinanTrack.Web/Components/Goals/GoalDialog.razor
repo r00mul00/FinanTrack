@@ -1,0 +1,138 @@
+@attribute [AllowAnonymous]
+@inject GoalApi Goals
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@_error</MudAlert>
+        }
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <LabeledTextField @bind-Value="_name" Label="Nome" RequiredError="Informe o nome da meta." MaxLength="100" />
+                </MudItem>
+                <MudItem xs="12">
+                    <div class="ft-field ft-goal-description">
+                        <span class="ft-field-label">Descrição (opcional)</span>
+                        <MudTextField T="string" @bind-Value="_description" Variant="Variant.Outlined" Lines="2" MaxLength="500" Immediate="true" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-goal-target">
+                        <span class="ft-field-label">Valor desejado (R$)</span>
+                        <MudNumericField T="decimal?" @bind-Value="_target" Variant="Variant.Outlined"
+                                         Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                         HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor desejado." />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-goal-initial">
+                        <span class="ft-field-label">Valor inicial (R$)</span>
+                        <MudNumericField T="decimal" @bind-Value="_initial" Variant="Variant.Outlined"
+                                         Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
+                                         HideSpinButtons="true" Immediate="true" />
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <div class="ft-field ft-goal-deadline">
+                        <span class="ft-field-label">Prazo</span>
+                        <MudDatePicker @bind-Date="_deadline" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance"
+                                       AutoClose="true" Required="true" RequiredError="Informe o prazo." />
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_busy" OnClick="CancelAsync">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+            }
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private sealed record Snapshot(string Name, string Description, decimal? Target, decimal Initial, DateTime? Deadline);
+
+    private MudForm _form = default!;
+    private string? _name;
+    private string? _description;
+    private decimal? _target;
+    private decimal _initial;
+    private DateTime? _deadline;
+    private string? _error;
+    private bool _busy;
+    private Snapshot _snapshot = default!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Nula ao criar; preenchida ao editar.</summary>
+    [Parameter] public GoalResponse? Goal { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Goal is not null)
+        {
+            _name = Goal.Name;
+            _description = Goal.Description;
+            _target = Goal.TargetAmount;
+            _initial = Goal.InitialAmount;
+            _deadline = Goal.Deadline.ToDateTime(TimeOnly.MinValue);
+        }
+        _snapshot = Current();
+    }
+
+    private Snapshot Current() => new(_name ?? "", _description ?? "", _target, _initial, _deadline);
+
+    private async Task CancelAsync()
+    {
+        if (Current() != _snapshot)
+        {
+            var discard = await Dialogs.ShowMessageBoxAsync(
+                "Descartar alterações?", "As alterações feitas serão perdidas.",
+                yesText: "Descartar", cancelText: "Continuar editando");
+            if (discard != true)
+            {
+                return;
+            }
+        }
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var request = new GoalRequest(_name!.Trim(), string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+            _target!.Value, _initial, DateOnly.FromDateTime(_deadline!.Value), Goal?.Version);
+        var result = Goal is null ? await Goals.CreateAsync(request) : await Goals.UpdateAsync(Goal.Id, request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(Goal is null ? "Meta criada." : "Meta atualizada.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            _error = result.Message;
+        }
+    }
+}

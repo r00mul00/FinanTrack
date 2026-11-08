@@ -1,0 +1,206 @@
+@page "/metas"
+@using System.Globalization
+@using FinanTrack.Web.Components.Goals
+@inject GoalApi GoalsApi
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Metas financeiras | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Metas financeiras</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="() => OpenGoalDialogAsync(null)">
+        Nova meta
+    </MudButton>
+</div>
+
+@if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        Não foi possível carregar as metas.
+        <MudLink Class="ml-1" Style="cursor: pointer;" OnClick="LoadAsync">Tentar novamente</MudLink>
+    </MudAlert>
+}
+else if (_goals is null)
+{
+    <MudGrid Spacing="3">
+        @for (var i = 0; i < 2; i++)
+        {
+            <MudItem xs="12" md="6"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" /></MudItem>
+        }
+    </MudGrid>
+}
+else if (_goals.Count == 0)
+{
+    <MudPaper Elevation="0" Class="ft-card pa-8 d-flex flex-column align-center">
+        <MudIcon Icon="@Icons.Material.Rounded.Flag" Size="Size.Large" Color="Color.Primary" Class="mb-3" />
+        <MudText Typo="Typo.body1">Nenhuma meta cadastrada.</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Crie seu primeiro objetivo em "Nova meta".</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var goal in _goals)
+        {
+            var completed = goal.Status == GoalStatus.COMPLETED;
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="ft-card pa-4 ft-goal">
+                    <div class="d-flex align-center gap-2">
+                        <div class="ft-category-name">
+                            <MudText Typo="Typo.subtitle1" Class="ft-ellipsis">@goal.Name</MudText>
+                            <span class="ft-budget-state">
+                                @if (completed)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Rounded.CheckCircleOutline" Size="Size.Small" Color="Color.Success" />
+                                    <text>Concluída</text>
+                                }
+                                else if (goal.Overdue)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Size="Size.Small" Color="Color.Error" />
+                                    <text>Prazo vencido em @FormatDate(goal.Deadline)</text>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Rounded.Event" Size="Size.Small" />
+                                    <text>Prazo: @FormatDate(goal.Deadline)</text>
+                                }
+                            </span>
+                        </div>
+                        <MudTooltip Text="Histórico">
+                            <MudIconButton Icon="@Icons.Material.Rounded.History" Size="Size.Small" aria-label="@($"Histórico de {goal.Name}")" OnClick="() => OpenHistoryAsync(goal)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Editar">
+                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {goal.Name}")" OnClick="() => OpenGoalDialogAsync(goal)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Excluir">
+                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {goal.Name}")" OnClick="() => DeleteAsync(goal)" />
+                        </MudTooltip>
+                    </div>
+
+                    @if (goal.Description is not null)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2" Style="color: var(--mud-palette-text-secondary);">@goal.Description</MudText>
+                    }
+
+                    <MudProgressLinear Class="my-3" Rounded="true" Size="Size.Medium" Color="@(completed ? Color.Success : Color.Primary)"
+                                       Value="@((double)goal.Progress)"
+                                       aria-label="@($"{goal.Name}: {goal.Progress.ToString("0.00", Money.Culture)}% concluído")" />
+
+                    <div class="d-flex justify-space-between flex-wrap gap-1">
+                        <MudText Typo="Typo.body2">@Money.Format(goal.CurrentAmount) de @Money.Format(goal.TargetAmount)</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                            @goal.Progress.ToString("0.00", Money.Culture)%@(goal.RemainingAmount > 0 ? $" · faltam {Money.Format(goal.RemainingAmount)}" : "")
+                        </MudText>
+                    </div>
+
+                    @if (!completed)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
+                                       aria-label="@($"Adicionar valor em {goal.Name}")" OnClick="() => OpenMovementAsync(goal, GoalMovementType.DEPOSIT)">Adicionar</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Remove"
+                                       Disabled="@(goal.CurrentAmount <= 0)"
+                                       aria-label="@($"Retirar valor de {goal.Name}")" OnClick="() => OpenMovementAsync(goal, GoalMovementType.WITHDRAWAL)">Retirar</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Rounded.TaskAlt"
+                                       aria-label="@($"Concluir {goal.Name}")" OnClick="() => CompleteAsync(goal)">Concluir</MudButton>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private static readonly DialogOptions Options = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    private List<GoalResponse>? _goals;
+    private bool _loadFailed;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loadFailed = false;
+        _goals = await GoalsApi.ListAsync();
+        _loadFailed = _goals is null;
+    }
+
+    private static string FormatDate(DateOnly date) => date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private async Task OpenGoalDialogAsync(GoalResponse? goal)
+    {
+        var parameters = new DialogParameters<GoalDialog> { { x => x.Goal, goal } };
+        var dialog = await Dialogs.ShowAsync<GoalDialog>(goal is null ? "Nova meta" : "Editar meta", parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task OpenMovementAsync(GoalResponse goal, GoalMovementType type)
+    {
+        var parameters = new DialogParameters<GoalMovementDialog>
+        {
+            { x => x.Goal, goal },
+            { x => x.Type, type }
+        };
+        var title = type == GoalMovementType.DEPOSIT ? $"Adicionar à meta: {goal.Name}" : $"Retirar da meta: {goal.Name}";
+        var dialog = await Dialogs.ShowAsync<GoalMovementDialog>(title, parameters, Options);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task OpenHistoryAsync(GoalResponse goal)
+    {
+        var parameters = new DialogParameters<GoalHistoryDialog> { { x => x.Goal, goal } };
+        await Dialogs.ShowAsync<GoalHistoryDialog>($"Histórico: {goal.Name}", parameters, Options);
+    }
+
+    private async Task CompleteAsync(GoalResponse goal)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Concluir meta", $"Marcar \"{goal.Name}\" como concluída? Depois disso ela não aceitará novas movimentações.",
+            yesText: "Concluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+        await RunAsync(() => GoalsApi.CompleteAsync(goal.Id), "Meta concluída.");
+    }
+
+    private async Task DeleteAsync(GoalResponse goal)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Excluir meta", $"Excluir a meta \"{goal.Name}\" e todo o histórico dela? Esta ação não pode ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+        await RunAsync(() => GoalsApi.DeleteAsync(goal.Id), "Meta excluída.");
+    }
+
+    private async Task RunAsync(Func<Task<ApiResult>> action, string successMessage)
+    {
+        var result = await action();
+        if (result.Success)
+        {
+            Snackbar.Add(successMessage, Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}
