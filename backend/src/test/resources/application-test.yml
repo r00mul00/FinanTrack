@@ -6,6 +6,8 @@ spring:
     url: ${TEST_DB_URL}
 
 finantrack:
+  jwt:
+    secret: segredo-usado-somente-nos-testes-automatizados
   cors:
     allowed-origins:
       - http://localhost:5080

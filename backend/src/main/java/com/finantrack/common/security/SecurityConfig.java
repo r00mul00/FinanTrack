@@ -4,6 +4,7 @@ import com.finantrack.common.config.FinanTrackProperties;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,7 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * Nega tudo por padrão. A validação do JWT é adicionada na Fase 3.
+ * Nega tudo por padrão e autentica por JWT.
  * CSRF fica desligado porque a API usa Bearer; o cookie existirá só em /auth/*.
  */
 @Configuration
@@ -33,8 +34,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .oauth2ResourceServer(server -> server.jwt(Customizer.withDefaults()))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/actuator/health").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll();
                     if (swaggerPublic) {
                         auth.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
                     }
