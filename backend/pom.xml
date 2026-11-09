@@ -30,6 +30,7 @@
 		<java.version>21</java.version>
 		<springdoc.version>3.2.0</springdoc.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
+		<openpdf.version>3.0.5</openpdf.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -77,6 +78,11 @@
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>${mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>${openpdf.version}</version>
 		</dependency>
 
 		<dependency>

@@ -32,7 +32,26 @@ public interface CreditCardInstallmentRepository extends JpaRepository<CreditCar
         LocalDate getPurchaseDate();
     }
 
+    interface CardExpense {
+        UUID getCardId();
+
+        long getPurchases();
+
+        BigDecimal getTotal();
+    }
+
     List<CreditCardInstallment> findAllByPurchaseId(UUID purchaseId);
+
+    /** Pela data da parcela, como nas despesas: uma compra parcelada se distribui pelos meses. */
+    @Query("""
+            select p.cardId as cardId, count(distinct p.id) as purchases, sum(i.amount) as total
+              from CreditCardInstallment i
+              join CreditCardPurchase p on p.id = i.purchaseId
+              join Transaction t on t.id = i.transactionId
+             where t.userId = :userId and t.transactionDate between :from and :to and p.canceledAt is null
+             group by p.cardId
+            """)
+    List<CardExpense> sumByCard(@Param("userId") UUID userId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
     /** Compras canceladas não fazem parte do total da fatura. */
     @Query("""

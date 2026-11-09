@@ -23,7 +23,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída |
 | 6 | Recursos financeiros | Concluída |
-| 7 | Relatórios e Configurações | Em andamento (bloco 1: Relatórios) |
+| 7 | Relatórios e Configurações | Em andamento (bloco 2: Configurações, próximo item 7.6) |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
 | 10 | Portfólio | Não iniciada |
@@ -93,7 +93,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | D8 | Concorrência | Lock otimista (`@Version`) e lock pessoal nas operações críticas | Evita saldo inconsistente em metas e faturas |
 | D9 | Auditoria | Tabela `audit_log` (acréscimo: não consta na lista de entidades) | O rascunho exige auditoria, mas não define onde registrá-la |
 | D10 | E-mail | Mailpit em desenvolvimento e provedor SMTP em produção | Necessário para validação de e-mail e recuperação de senha |
-| D11 | Biblioteca de PDF | Avaliar opções e licenças na Fase 7 | Evita escolher antes de conhecer os relatórios |
+| D11 | Biblioteca de PDF | OpenPDF 3.0.5 (LGPL 2.1 / MPL 2.0), escolhida na Fase 7 | API de tabelas pronta e licença compatível; iText exigiria AGPL ou licença paga |
 | D12 | Hospedagem | Avaliar custo e suporte a cookies na Fase 1 | Influencia D5 |
 
 ---
@@ -295,11 +295,11 @@ Saída: documentos em `docs/`.
 
 **Relatórios**
 
-- [ ] 7.1 Filtros e indicadores.
-- [ ] 7.2 Relatórios mensais, anuais, por categoria e por período.
-- [ ] 7.3 Receitas versus despesas, evolução financeira e despesas por cartão.
-- [ ] 7.4 Exportação em CSV e PDF, respeitando os filtros selecionados (D11).
-- [ ] 7.5 Download no navegador e mensagem de erro caso a geração falhe.
+- [x] 7.1 Filtros e indicadores.
+- [x] 7.2 Relatórios mensais, anuais, por categoria e por período.
+- [x] 7.3 Receitas versus despesas, evolução financeira e despesas por cartão.
+- [x] 7.4 Exportação em CSV e PDF, respeitando os filtros selecionados (D11).
+- [x] 7.5 Download no navegador e mensagem de erro caso a geração falhe.
 
 **Configurações (acréscimo de cronograma).** O módulo está no rascunho, mas não aparece em nenhuma fase.
 

@@ -6,12 +6,12 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 
 /** Período consultado e o período anterior usado na comparação. */
-record DashboardPeriod(LocalDate from, LocalDate to) {
+public record DashboardPeriod(LocalDate from, LocalDate to) {
 
     private static final int MAX_YEARS = 5;
 
     /** Sem datas, usa o mês corrente. */
-    static DashboardPeriod resolve(LocalDate from, LocalDate to, LocalDate today) {
+    public static DashboardPeriod resolve(LocalDate from, LocalDate to, LocalDate today) {
         if (from == null && to == null) {
             YearMonth month = YearMonth.from(today);
             return new DashboardPeriod(month.atDay(1), month.atEndOfMonth());
@@ -39,7 +39,7 @@ record DashboardPeriod(LocalDate from, LocalDate to) {
         return new DashboardPeriod(from.minusDays(days), from.minusDays(1));
     }
 
-    long lengthInDays() {
+    public long lengthInDays() {
         return ChronoUnit.DAYS.between(from, to) + 1;
     }
 }

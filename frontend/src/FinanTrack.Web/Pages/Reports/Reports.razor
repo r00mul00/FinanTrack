@@ -1,0 +1,278 @@
+@page "/relatorios"
+@using System.Globalization
+@using FinanTrack.Web.Components.Dashboard
+@inject ReportApi Api
+@inject DashboardApi Dashboard
+@inject IJSRuntime Js
+@inject ISnackbar Snackbar
+
+<PageTitle>Relatórios | FinanTrack</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-6">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Relatórios</MudText>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Rounded.TableView" Disabled="@(!CanExport)" OnClick="@(() => ExportAsync("csv", "text/csv"))">
+            @(_exporting == "csv" ? "Gerando..." : "Exportar CSV")
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.PictureAsPdf" Disabled="@(!CanExport)" OnClick="@(() => ExportAsync("pdf", "application/pdf"))">
+            @(_exporting == "pdf" ? "Gerando..." : "Exportar PDF")
+        </MudButton>
+    </div>
+</div>
+
+<MudPaper Elevation="0" Class="ft-card pa-4 mb-4">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <div class="ft-field">
+                <span class="ft-field-label">Relatório</span>
+                <MudSelect T="ReportOption" Value="_option" ValueChanged="OnOptionChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           ToStringFunc="@(item => item?.Label)" aria-label="Tipo de relatório">
+                    @foreach (var option in ReportDisplay.Options)
+                    {
+                        <MudSelectItem T="ReportOption" Value="option">@option.Label</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        </MudItem>
+
+        @if (_option.Filter == ReportFilterKind.Month)
+        {
+            <MudItem xs="6" md="4">
+                <div class="ft-field">
+                    <span class="ft-field-label">Mês</span>
+                    <MudSelect T="int" Value="_month" ValueChanged="OnMonthChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               ToStringFunc="MonthName" aria-label="Mês">
+                        @for (var month = 1; month <= 12; month++)
+                        {
+                            var value = month;
+                            <MudSelectItem T="int" Value="value">@MonthName(value)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+            </MudItem>
+        }
+        @if (_option.Filter != ReportFilterKind.Period)
+        {
+            <MudItem xs="6" md="4">
+                <div class="ft-field">
+                    <span class="ft-field-label">Ano</span>
+                    <MudNumericField T="int" Value="_year" ValueChanged="OnYearChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Min="2000" Max="2100" aria-label="Ano" />
+                </div>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="6" md="4">
+                <div class="ft-field">
+                    <span class="ft-field-label">De</span>
+                    <MudDatePicker Date="_from" DateChanged="OnFromChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance" AutoClose="true" />
+                </div>
+            </MudItem>
+            <MudItem xs="6" md="4">
+                <div class="ft-field">
+                    <span class="ft-field-label">Até</span>
+                    <MudDatePicker Date="_to" DateChanged="OnToChanged" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   DateFormat="dd/MM/yyyy" Culture="BrazilianCulture.Instance" AutoClose="true" />
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+else if (_loading)
+{
+    <MudGrid Spacing="3" Class="mb-3">
+        @for (var i = 0; i < 3; i++)
+        {
+            <MudItem xs="12" sm="4"><MudSkeleton Height="96px" /></MudItem>
+        }
+    </MudGrid>
+    <MudSkeleton Height="320px" SkeletonType="SkeletonType.Rectangle" />
+}
+else if (_report is not null)
+{
+    <MudGrid Spacing="3" Class="mb-3">
+        @foreach (var indicator in _report.Indicators)
+        {
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="0" Class="ft-card pa-5">
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">@indicator.Label</MudText>
+                    <MudText Typo="Typo.h5">@Money.Format(indicator.Value)</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    @if (_chart is not null)
+    {
+        <div class="mb-3"><IncomeExpenseChart Data="_chart" /></div>
+    }
+
+    <MudPaper Elevation="0" Class="ft-card pa-2">
+        @if (_report.Rows.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="pa-4">Nenhum dado encontrado com estes filtros.</MudText>
+        }
+        else
+        {
+            <MudTable @key="_report" T="List<string>" Items="_report.Rows" Dense="true" Hover="true" Elevation="0"
+                      HorizontalScrollbar="true" RowsPerPage="50" Breakpoint="Breakpoint.None">
+                <HeaderContent>
+                    @foreach (var column in _report.Columns)
+                    {
+                        <MudTh Style="@AlignOf(column.Kind)">@column.Label</MudTh>
+                    }
+                </HeaderContent>
+                <RowTemplate>
+                    @for (var i = 0; i < _report.Columns.Count; i++)
+                    {
+                        var kind = _report.Columns[i].Kind;
+                        <MudTd Style="@AlignOf(kind)">@ReportDisplay.Format(kind, context[i])</MudTd>
+                    }
+                </RowTemplate>
+                <FooterContent>
+                    @for (var i = 0; i < _report.Columns.Count; i++)
+                    {
+                        var kind = _report.Columns[i].Kind;
+                        <MudTd Style="@($"{AlignOf(kind)} font-weight: 600;")">@ReportDisplay.Format(kind, _report.Totals[i])</MudTd>
+                    }
+                </FooterContent>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="@(new[] { 25, 50, 100 })" RowsPerPageString="Por página:" InfoFormat="{first_item}-{last_item} de {all_items}" />
+                </PagerContent>
+            </MudTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    private ReportOption _option = ReportDisplay.Options[0];
+    private int _month = DateTime.Today.Month;
+    private int _year = DateTime.Today.Year;
+    private DateTime? _from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime? _to = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddDays(-1);
+
+    private ReportResponse? _report;
+    private IncomeVsExpenseResponse? _chart;
+    private bool _loading;
+    private string? _error;
+    private string? _exporting;
+    private int _loadId;
+
+    private bool CanExport => _report is not null && _error is null && !_loading && _exporting is null;
+
+    private string Filter => _option.Filter switch
+    {
+        ReportFilterKind.Month => $"month={_year:0000}-{_month:00}",
+        ReportFilterKind.Year => $"year={_year}",
+        _ => $"from={Iso(_from!.Value)}&to={Iso(_to!.Value)}"
+    };
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var loadId = ++_loadId;
+        _report = null;
+        _chart = null;
+        _error = ValidationError();
+        if (_error is not null)
+        {
+            return;
+        }
+
+        _loading = true;
+        StateHasChanged();
+        var report = Api.GetAsync(_option.Slug, Filter);
+        var chart = _option.Slug == ReportDisplay.IncomeVsExpense
+            ? Dashboard.GetIncomeVsExpenseAsync(DateOnly.FromDateTime(_from!.Value), DateOnly.FromDateTime(_to!.Value))
+            : Task.FromResult<IncomeVsExpenseResponse?>(null);
+        await Task.WhenAll(report, chart);
+
+        // Se o filtro mudou durante a consulta, só a resposta mais nova é exibida.
+        if (loadId != _loadId)
+        {
+            return;
+        }
+        _report = report.Result;
+        _chart = chart.Result;
+        _error = _report is null ? "Não foi possível gerar o relatório. Se o período for muito longo, escolha um menor." : null;
+        _loading = false;
+    }
+
+    private string? ValidationError()
+    {
+        if (_option.Filter != ReportFilterKind.Period)
+        {
+            return null;
+        }
+        if (_from is null || _to is null)
+        {
+            return "Informe as datas inicial e final.";
+        }
+        return _from > _to ? "A data inicial não pode ser posterior à data final." : null;
+    }
+
+    private async Task ExportAsync(string format, string contentType)
+    {
+        if (!CanExport)
+        {
+            return;
+        }
+        _exporting = format;
+        var file = await Api.ExportAsync(_option.Slug, Filter, format);
+        _exporting = null;
+
+        if (file is null)
+        {
+            Snackbar.Add("Não foi possível gerar o arquivo. Tente novamente.", Severity.Error);
+            return;
+        }
+        var name = $"relatorio-{_option.Slug}-{_report!.From:yyyy-MM-dd}-a-{_report.To:yyyy-MM-dd}.{format}";
+        await Js.InvokeVoidAsync("finanTrackDownload", name, contentType, file);
+        Snackbar.Add("Arquivo gerado.", Severity.Success);
+    }
+
+    private Task OnOptionChanged(ReportOption value)
+    {
+        _option = value;
+        return LoadAsync();
+    }
+
+    private Task OnMonthChanged(int value)
+    {
+        _month = value;
+        return LoadAsync();
+    }
+
+    private Task OnYearChanged(int value)
+    {
+        _year = value;
+        return LoadAsync();
+    }
+
+    private Task OnFromChanged(DateTime? value)
+    {
+        _from = value;
+        return LoadAsync();
+    }
+
+    private Task OnToChanged(DateTime? value)
+    {
+        _to = value;
+        return LoadAsync();
+    }
+
+    private static string Iso(DateTime date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static string MonthName(int month) =>
+        BrazilianCulture.Instance.DateTimeFormat.GetMonthName(month);
+
+    private static string AlignOf(ColumnKind kind) => ReportDisplay.IsNumeric(kind) ? "text-align: right;" : "";
+}

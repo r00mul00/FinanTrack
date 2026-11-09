@@ -146,6 +146,14 @@ Compra só pode ser cancelada se nenhuma parcela estiver em fatura com pagamento
 
 Despesas comuns `PENDING` e faturas com valor em aberto que vencem até 30 dias a partir de hoje, incluindo as já vencidas, em ordem de vencimento e limitadas a 8 itens. A lista, as metas e os alertas de orçamento refletem o momento atual e não usam o período selecionado.
 
+## Relatórios
+
+- Receitas e despesas seguem as regras do Dashboard: pendentes não contam, compras de cartão contam na data de cada parcela e pagamentos de fatura nunca contam.
+- Tela, CSV e PDF partem do mesmo relatório calculado, por isso os totais são iguais.
+- "Por período" lista os lançamentos que entram nos totais, com limite de 5.000 linhas.
+- Em "Evolução financeira", o acumulado parte de zero no início do período.
+- O CSV usa `;` e vírgula decimal, para abrir direto no Excel em português, e neutraliza textos que seriam interpretados como fórmula.
+
 ## Notificações
 
 Job diário (02:30, `America/Sao_Paulo`, depois das recorrências) que também roda ao iniciar a aplicação. Um aviso por evento, garantido pelo índice único `(user_id, dedupe_key)`.

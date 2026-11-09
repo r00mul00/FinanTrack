@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -127,6 +128,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findTop8ByUserIdAndStatusAndKindAndTypeAndDueDateLessThanEqualOrderByDueDateAsc(UUID userId,
             TransactionStatus status, TransactionKind kind, TransactionType type, LocalDate limit);
+
+    /** Os lançamentos que entram em receitas e despesas, com a mesma regra dos totais. */
+    @Query("select t from Transaction t where t.userId = :userId and t.transactionDate between :from and :to"
+            + " and (" + COUNTED_INCOME + " or " + COUNTED_EXPENSE + ")"
+            + " order by t.transactionDate asc, t.createdAt asc")
+    List<Transaction> findCountedInPeriod(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to, Pageable pageable);
 
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 

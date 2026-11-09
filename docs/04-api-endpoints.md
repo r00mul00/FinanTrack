@@ -129,7 +129,7 @@ Lançamentos com `kind` diferente de `STANDARD` são alterados apenas pelos endp
 
 ## Relatórios
 
-Todos aceitam `from` e `to`; exportação com `format=csv|pdf`, respeitando os mesmos filtros.
+O mensal usa `month`, o anual usa `year` e os demais usam `from` e `to`; sem filtro, valem o mês ou o ano correntes. Exportação com `format=csv|pdf`, respeitando os mesmos filtros.
 
 | Método | Rota | Descrição |
 |---|---|---|
