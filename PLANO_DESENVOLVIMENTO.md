@@ -320,7 +320,7 @@ Saída: documentos em `docs/`.
 - [x] 8.3 Revisar a segurança pela checklist de referência.
 - [x] 8.4 Revisar autorização por usuário em todos os endpoints.
 - [ ] 8.5 Analisar performance: consultas N+1, índices e paginação.
-- [ ] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
+- [x] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
 - [ ] 8.7 Refatorar.
 - [ ] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
 - [ ] 8.9 Verificar hover, focus, disabled, loading e feedback visual.
@@ -430,7 +430,7 @@ Aplicar DTOs de entrada e saída, Bean Validation, tratamento global de exceçõ
 - [x] Autorização por usuário em todas as operações.
 - [x] CORS restrito às origens permitidas.
 - [x] Validação de entrada.
-- [ ] Erros tratados sem expor informações internas. Pendente: item 8.6.
+- [x] Erros tratados sem expor informações internas.
 - [x] Segredos em variáveis de ambiente.
 - [x] Tokens protegidos no frontend; sem tokens sensíveis em `localStorage` sem avaliação de riscos.
 - [x] Nenhum número completo de cartão, CVV ou senha de cartão armazenado.
