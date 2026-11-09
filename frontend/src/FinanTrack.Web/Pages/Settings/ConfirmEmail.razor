@@ -1,0 +1,45 @@
+@page "/confirmar-email"
+@inject UserApi Users
+@inject AuthSession Session
+
+<PageTitle>Confirmar e-mail | FinanTrack</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-6">Confirmar novo e-mail</MudText>
+
+@if (_busy)
+{
+    <div class="d-flex align-center gap-3">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" />
+        <MudText Typo="Typo.body2">Confirmando...</MudText>
+    </div>
+}
+else if (_result is { Success: true })
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4">E-mail alterado. Use o novo endereço no próximo acesso.</MudAlert>
+    <MudButton Href="/configuracoes" Variant="Variant.Filled" Color="Color.Primary">Voltar para Configurações</MudButton>
+}
+else
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@(_result?.Message ?? "Link inválido.")</MudAlert>
+    <MudButton Href="/configuracoes" Variant="Variant.Outlined">Voltar para Configurações</MudButton>
+}
+
+@code {
+    private bool _busy = true;
+    private ApiResult? _result;
+
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Token))
+        {
+            _result = await Users.ConfirmEmailChangeAsync(Token);
+            if (_result.Success && await Users.GetCurrentAsync() is { } user)
+            {
+                Session.UpdateCurrentUser(user);
+            }
+        }
+        _busy = false;
+    }
+}

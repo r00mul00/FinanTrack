@@ -1,20 +1,24 @@
 @page "/configuracoes"
 @using FinanTrack.Web.Components.Accounts
+@using FinanTrack.Web.Components.Settings
 
 <PageTitle>Configurações | FinanTrack</PageTitle>
 
 <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-6">Configurações</MudText>
 
 <MudPaper Elevation="0" Class="ft-card pa-4">
-    @* As demais abas chegam na Fase 7. *@
-    <MudTabs Elevation="0" ActivePanelIndex="1" Color="Color.Transparent" SliderColor="Color.Primary">
-        <MudTabPanel Text="Perfil" Disabled="true" ToolTip="Disponível na Fase 7" />
-        <MudTabPanel Text="Contas">
-            <div class="pt-4">
-                <AccountsTab />
-            </div>
+    <MudTabs Elevation="0" Color="Color.Transparent" SliderColor="Color.Primary">
+        <MudTabPanel Text="Perfil">
+            <div class="pt-4"><ProfileTab /></div>
         </MudTabPanel>
-        <MudTabPanel Text="Preferências" Disabled="true" ToolTip="Disponível na Fase 7" />
-        <MudTabPanel Text="Segurança" Disabled="true" ToolTip="Disponível na Fase 7" />
+        <MudTabPanel Text="Contas">
+            <div class="pt-4"><AccountsTab /></div>
+        </MudTabPanel>
+        <MudTabPanel Text="Preferências">
+            <div class="pt-4"><PreferencesTab /></div>
+        </MudTabPanel>
+        <MudTabPanel Text="Segurança">
+            <div class="pt-4"><SecurityTab /></div>
+        </MudTabPanel>
     </MudTabs>
 </MudPaper>

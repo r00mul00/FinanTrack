@@ -28,7 +28,7 @@
                 }
             </div>
             <div class="ft-field ft-budget-limit">
-                <span class="ft-field-label">Limite do mês (R$)</span>
+                <span class="ft-field-label">Limite do mês (@Money.Symbol)</span>
                 <MudNumericField T="decimal?" @bind-Value="_limit" Variant="Variant.Outlined"
                                  Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                  HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o limite." />

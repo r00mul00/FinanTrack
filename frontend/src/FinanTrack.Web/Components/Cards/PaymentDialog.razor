@@ -23,7 +23,7 @@
                 </MudSelect>
             </div>
             <div class="ft-field ft-pay-amount">
-                <span class="ft-field-label">Valor (R$)</span>
+                <span class="ft-field-label">Valor (@Money.Symbol)</span>
                 <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
                                  Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                  HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor."

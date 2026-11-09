@@ -10,6 +10,7 @@ public static class FinanTrackTheme
         {
             Primary = "#7C4DFF",
             Secondary = "#B14DDB",
+            Tertiary = "#B39BFF",
             Background = "#10111B",
             BackgroundGray = "#25273A",
             Surface = "#1B1D2D",
@@ -29,13 +30,29 @@ public static class FinanTrackTheme
             Divider = "#25273A",
             Skeleton = "#25273A"
         },
-        // Variante clara provisória; será definida na Fase 7.
         PaletteLight = new PaletteLight
         {
-            Primary = "#7C4DFF",
-            Success = "#20C997",
-            Error = "#FF647C",
-            Warning = "#FFB547"
+            Primary = "#6A3DE8",
+            Secondary = "#9333C4",
+            Tertiary = "#5B2FD6",
+            Background = "#F5F6FA",
+            BackgroundGray = "#ECEDF4",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            DrawerText = "#5A5D73",
+            DrawerIcon = "#5A5D73",
+            AppbarBackground = "#F5F6FA",
+            AppbarText = "#1C1E2E",
+            Success = "#0A7F5E",
+            Error = "#D6304A",
+            Warning = "#9A6100",
+            TextPrimary = "#1C1E2E",
+            TextSecondary = "#5A5D73",
+            ActionDefault = "#5A5D73",
+            LinesDefault = "#E1E3EC",
+            LinesInputs = "#C9CCD9",
+            Divider = "#E1E3EC",
+            Skeleton = "#E1E3EC"
         },
         Typography = new Typography
         {

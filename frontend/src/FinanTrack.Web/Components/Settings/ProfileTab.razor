@@ -1,0 +1,94 @@
+@using FinanTrack.Web.Validation
+@inject UserApi Users
+@inject AuthSession Session
+@inject ISnackbar Snackbar
+
+<div class="ft-settings-section">
+    <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-3">Dados pessoais</MudText>
+    <MudForm @ref="_nameForm" Spacing="4">
+        <LabeledTextField @bind-Value="_name" Label="Nome" RequiredError="Informe o nome." MaxLength="120" Autocomplete="name" />
+    </MudForm>
+    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="_savingName" OnClick="SaveNameAsync">
+        @(_savingName ? "Salvando..." : "Salvar nome")
+    </MudButton>
+</div>
+
+<MudDivider Class="my-6" />
+
+<div class="ft-settings-section">
+    <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-1">E-mail de acesso</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3" Style="color: var(--mud-palette-text-secondary);">
+        Atual: @Session.CurrentUser?.Email. O endereço só muda depois que você abrir o link enviado ao novo e-mail.
+    </MudText>
+    @if (_emailSent)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            Se o endereço estiver disponível, enviamos um link de confirmação para ele.
+        </MudAlert>
+    }
+    <MudForm @ref="_emailForm" Spacing="4">
+        <LabeledTextField @bind-Value="_newEmail" Label="Novo e-mail" RequiredError="Informe o novo e-mail."
+                          InputType="InputType.Email" MaxLength="254" Autocomplete="email" Validation="AuthRules.Email" />
+        <PasswordField @bind-Value="_emailPassword" Label="Senha atual" />
+    </MudForm>
+    <MudButton Class="mt-4" Variant="Variant.Outlined" Color="Color.Primary" Disabled="_savingEmail" OnClick="RequestEmailChangeAsync">
+        @(_savingEmail ? "Enviando..." : "Enviar link de confirmação")
+    </MudButton>
+</div>
+
+@code {
+    private MudForm _nameForm = default!;
+    private MudForm _emailForm = default!;
+    private string? _name;
+    private string? _newEmail;
+    private string? _emailPassword;
+    private bool _savingName;
+    private bool _savingEmail;
+    private bool _emailSent;
+
+    protected override void OnInitialized() => _name = Session.CurrentUser?.Name;
+
+    private async Task SaveNameAsync()
+    {
+        await _nameForm.ValidateAsync();
+        if (!_nameForm.IsValid)
+        {
+            return;
+        }
+        _savingName = true;
+        var (result, user) = await Users.RenameAsync(_name!);
+        _savingName = false;
+        if (user is not null)
+        {
+            Session.UpdateCurrentUser(user);
+            Snackbar.Add("Nome atualizado.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+
+    private async Task RequestEmailChangeAsync()
+    {
+        _emailSent = false;
+        await _emailForm.ValidateAsync();
+        if (!_emailForm.IsValid)
+        {
+            return;
+        }
+        _savingEmail = true;
+        var result = await Users.RequestEmailChangeAsync(_newEmail!.Trim(), _emailPassword!);
+        _savingEmail = false;
+        if (result.Success)
+        {
+            _emailSent = true;
+            _emailPassword = null;
+            await _emailForm.ResetAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+    }
+}

@@ -111,15 +111,23 @@ public sealed class AuthSession(IHttpClientFactory httpClientFactory)
         }
 
         AccessToken = token.AccessToken;
-        CurrentUser = await meResponse.Content.ReadFromJsonAsync<UserResponse>();
-        Changed?.Invoke();
+        ApplyUser(await meResponse.Content.ReadFromJsonAsync<UserResponse>());
         return true;
+    }
+
+    /// <summary>Reflete na sessão, de imediato, alterações salvas em Configurações.</summary>
+    public void UpdateCurrentUser(UserResponse user) => ApplyUser(user);
+
+    private void ApplyUser(UserResponse? user)
+    {
+        CurrentUser = user;
+        Money.UseCurrency(user?.Currency);
+        Changed?.Invoke();
     }
 
     private void Clear()
     {
         AccessToken = null;
-        CurrentUser = null;
-        Changed?.Invoke();
+        ApplyUser(null);
     }
 }

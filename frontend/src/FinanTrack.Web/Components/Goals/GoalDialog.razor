@@ -22,7 +22,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="ft-field ft-goal-target">
-                        <span class="ft-field-label">Valor desejado (R$)</span>
+                        <span class="ft-field-label">Valor desejado (@Money.Symbol)</span>
                         <MudNumericField T="decimal?" @bind-Value="_target" Variant="Variant.Outlined"
                                          Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                          HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor desejado." />
@@ -30,7 +30,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="ft-field ft-goal-initial">
-                        <span class="ft-field-label">Valor inicial (R$)</span>
+                        <span class="ft-field-label">Valor inicial (@Money.Symbol)</span>
                         <MudNumericField T="decimal" @bind-Value="_initial" Variant="Variant.Outlined"
                                          Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                          HideSpinButtons="true" Immediate="true" />

@@ -15,6 +15,7 @@ import com.finantrack.notification.repository.NotificationRepository;
 import com.finantrack.transaction.entity.Transaction;
 import com.finantrack.transaction.repository.TransactionRepository;
 import com.finantrack.transaction.repository.TransactionRepository.CategoryTotal;
+import com.finantrack.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -23,6 +24,7 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,11 +47,13 @@ public class NotificationGenerator {
     private final CreditCardInvoiceRepository invoices;
     private final CreditCardRepository cards;
     private final CardLimitCalculator limits;
+    private final UserRepository users;
     private final Clock clock;
 
     public NotificationGenerator(NotificationRepository notifications, BudgetRepository budgets,
             CategoryRepository categories, TransactionRepository transactions, CreditCardInvoiceRepository invoices,
-            CreditCardRepository cards, CardLimitCalculator limits, Clock clock) {
+            CreditCardRepository cards, CardLimitCalculator limits, UserRepository users, Clock clock) {
+        this.users = users;
         this.notifications = notifications;
         this.budgets = budgets;
         this.categories = categories;
@@ -62,7 +66,10 @@ public class NotificationGenerator {
 
     public void generateBudgetAlerts(LocalDate today) {
         YearMonth month = YearMonth.from(today);
-        List<Budget> current = budgets.findAllByReferenceMonth(month.atDay(1));
+        Set<UUID> muted = users.findIdsWithBudgetNoticesOff();
+        List<Budget> current = budgets.findAllByReferenceMonth(month.atDay(1)).stream()
+                .filter(budget -> !muted.contains(budget.getUserId()))
+                .toList();
         Map<UUID, String> names = categories.findAllById(current.stream().map(Budget::getCategoryId).toList()).stream()
                 .collect(Collectors.toMap(Category::getId, Category::getName));
 
@@ -78,7 +85,11 @@ public class NotificationGenerator {
 
     /** Só despesas comuns: parcelas de cartão são avisadas pela fatura. */
     public void generateTransactionDueDates(LocalDate today) {
+        Set<UUID> muted = users.findIdsWithDueDateNoticesOff();
         for (Transaction item : transactions.findPendingExpensesDueBetween(today, today.plusDays(DUE_SOON_DAYS))) {
+            if (muted.contains(item.getUserId())) {
+                continue;
+            }
             insert(item.getUserId(), NotificationType.DUE_DATE, "Conta a vencer",
                     "%s vence em %s.".formatted(item.getDescription(), item.getDueDate().format(DATE)),
                     "due:%s:%s".formatted(item.getId(), item.getDueDate()));
@@ -92,10 +103,11 @@ public class NotificationGenerator {
         Map<UUID, CreditCard> cardsById = cards.findAllById(due.stream().map(CreditCardInvoice::getCardId).toList())
                 .stream().collect(Collectors.toMap(CreditCard::getId, Function.identity()));
 
+        Set<UUID> muted = users.findIdsWithDueDateNoticesOff();
         for (CreditCardInvoice invoice : due) {
             BigDecimal total = totals.getOrDefault(invoice.getId(), BigDecimal.ZERO);
-            if (total.compareTo(invoice.getPaidAmount()) > 0) {
-                CreditCard card = cardsById.get(invoice.getCardId());
+            CreditCard card = cardsById.get(invoice.getCardId());
+            if (total.compareTo(invoice.getPaidAmount()) > 0 && !muted.contains(card.getUserId())) {
                 insert(card.getUserId(), NotificationType.INVOICE_DUE, "Fatura a vencer",
                         "A fatura do cartão %s vence em %s.".formatted(card.getNickname(), invoice.getDueDate().format(DATE)),
                         "invoice:" + invoice.getId());

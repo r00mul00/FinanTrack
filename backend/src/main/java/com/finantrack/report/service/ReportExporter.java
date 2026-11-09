@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -52,7 +53,8 @@ public class ReportExporter {
         return file;
     }
 
-    public byte[] toPdf(ReportResponse report) {
+    /** A moeda escolhida muda só o símbolo: os valores não são convertidos. */
+    public byte[] toPdf(ReportResponse report, String currencyCode) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (Document document = new Document(PageSize.A4, 36, 36, 36, 36)) {
             PdfWriter.getInstance(document, output);
@@ -63,18 +65,18 @@ public class ReportExporter {
             Font bold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
             document.add(new Paragraph("Período: %s a %s".formatted(report.from().format(DATE), report.to().format(DATE)), regular));
             String indicators = report.indicators().stream()
-                    .map(item -> item.label() + ": " + currency(item.value()))
+                    .map(item -> item.label() + ": " + currency(item.value(), currencyCode))
                     .collect(Collectors.joining("   |   "));
             Paragraph summary = new Paragraph(indicators, bold);
             summary.setSpacingAfter(12);
             document.add(summary);
 
-            document.add(table(report, regular, bold));
+            document.add(table(report, currencyCode, regular, bold));
         }
         return output.toByteArray();
     }
 
-    private PdfPTable table(ReportResponse report, Font regular, Font bold) {
+    private PdfPTable table(ReportResponse report, String currencyCode, Font regular, Font bold) {
         List<Column> columns = report.columns();
         PdfPTable table = new PdfPTable(columns.size());
         table.setWidthPercentage(100);
@@ -85,15 +87,15 @@ public class ReportExporter {
             cell.setBackgroundColor(HEADER_BACKGROUND);
             table.addCell(cell);
         });
-        report.rows().forEach(row -> addRow(table, columns, row, regular));
-        addRow(table, columns, report.totals(), bold);
+        report.rows().forEach(row -> addRow(table, columns, row, currencyCode, regular));
+        addRow(table, columns, report.totals(), currencyCode, bold);
         return table;
     }
 
-    private void addRow(PdfPTable table, List<Column> columns, List<String> row, Font font) {
+    private void addRow(PdfPTable table, List<Column> columns, List<String> row, String currencyCode, Font font) {
         IntStream.range(0, columns.size()).forEach(index -> {
             ColumnKind kind = columns.get(index).kind();
-            table.addCell(cell(pdfValue(kind, row.get(index)), kind, font));
+            table.addCell(cell(pdfValue(kind, row.get(index), currencyCode), kind, font));
         });
     }
 
@@ -128,12 +130,12 @@ public class ReportExporter {
                 : safe;
     }
 
-    private String pdfValue(ColumnKind kind, String value) {
+    private String pdfValue(ColumnKind kind, String value, String currencyCode) {
         if (value.isEmpty()) {
             return value;
         }
         return switch (kind) {
-            case MONEY -> currency(new BigDecimal(value));
+            case MONEY -> currency(new BigDecimal(value), currencyCode);
             case PERCENT -> value.replace('.', ',') + "%";
             case DATE -> date(value);
             case TEXT, INTEGER -> value;
@@ -145,7 +147,9 @@ public class ReportExporter {
         return value.matches("\\d{4}-\\d{2}-\\d{2}") ? LocalDate.parse(value).format(DATE) : value;
     }
 
-    private String currency(BigDecimal value) {
-        return NumberFormat.getCurrencyInstance(BRAZIL).format(value).replace(' ', ' ');
+    private String currency(BigDecimal value, String currencyCode) {
+        NumberFormat format = NumberFormat.getCurrencyInstance(BRAZIL);
+        format.setCurrency(Currency.getInstance(currencyCode));
+        return format.format(value).replace(' ', ' ');
     }
 }

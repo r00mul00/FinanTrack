@@ -60,7 +60,7 @@
         new()
         {
             Name = "Despesas", Data = Slices.Select(s => (double)s.Amount).ToArray(),
-            TooltipTitleFormat = "{{X_VALUE}}: R$ {{Y_VALUE}}", TooltipYValueFormat = "N2"
+            TooltipTitleFormat = "{{X_VALUE}}: " + Money.Symbol + " {{Y_VALUE}}", TooltipYValueFormat = "N2"
         }
     ];
 

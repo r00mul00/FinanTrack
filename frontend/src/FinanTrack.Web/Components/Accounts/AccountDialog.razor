@@ -23,7 +23,7 @@
             </div>
 
             <div class="ft-field">
-                <span class="ft-field-label">Saldo inicial (R$)</span>
+                <span class="ft-field-label">Saldo inicial (@Money.Symbol)</span>
                 <MudNumericField T="decimal" @bind-Value="_initialBalance" Variant="Variant.Outlined"
                                  Min="0m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                  HideSpinButtons="true" Immediate="true" />

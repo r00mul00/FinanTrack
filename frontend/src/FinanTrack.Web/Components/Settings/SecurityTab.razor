@@ -1,0 +1,122 @@
+@using FinanTrack.Web.Validation
+@inject UserApi Users
+@inject AuthSession Session
+@inject IDialogService Dialogs
+@inject IJSRuntime Js
+@inject ISnackbar Snackbar
+
+<div class="ft-settings-section">
+    <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-1">Alterar senha</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3" Style="color: var(--mud-palette-text-secondary);">
+        Todas as sessões serão encerradas e você precisará entrar novamente.
+    </MudText>
+    <MudForm @ref="_passwordForm" Spacing="4">
+        <PasswordField @bind-Value="_currentPassword" Label="Senha atual" />
+        <PasswordField @bind-Value="_newPassword" Label="Nova senha" Autocomplete="new-password" Validation="AuthRules.NewPassword" />
+        <PasswordField @bind-Value="_confirmation" Label="Confirme a nova senha" Autocomplete="new-password" Validation="MatchesNewPassword" />
+    </MudForm>
+    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="_changingPassword" OnClick="ChangePasswordAsync">
+        @(_changingPassword ? "Alterando..." : "Alterar senha")
+    </MudButton>
+</div>
+
+<MudDivider Class="my-6" />
+
+<div class="ft-settings-section">
+    <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-1">Seus dados</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3" Style="color: var(--mud-palette-text-secondary);">
+        Baixe uma cópia dos seus dados em formato JSON.
+    </MudText>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Rounded.Download" Disabled="_exporting" OnClick="ExportAsync">
+        @(_exporting ? "Gerando..." : "Exportar meus dados")
+    </MudButton>
+</div>
+
+<MudDivider Class="my-6" />
+
+<div class="ft-settings-section">
+    <MudText Typo="Typo.h6" HtmlTag="h2" Class="mb-1">Excluir conta</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3" Style="color: var(--mud-palette-text-secondary);">
+        Seus dados serão apagados definitivamente após 30 dias. Para desistir, basta entrar na conta dentro desse prazo.
+    </MudText>
+    <MudForm @ref="_deletionForm" Spacing="4">
+        <PasswordField @bind-Value="_deletionPassword" Label="Senha atual" />
+    </MudForm>
+    <MudButton Class="mt-4" Variant="Variant.Outlined" Color="Color.Error" Disabled="_deleting" OnClick="RequestDeletionAsync">
+        @(_deleting ? "Enviando..." : "Solicitar exclusão")
+    </MudButton>
+</div>
+
+@code {
+    private MudForm _passwordForm = default!;
+    private MudForm _deletionForm = default!;
+    private string? _currentPassword;
+    private string? _newPassword;
+    private string? _confirmation;
+    private string? _deletionPassword;
+    private bool _changingPassword;
+    private bool _exporting;
+    private bool _deleting;
+
+    private string? MatchesNewPassword(string? value) =>
+        value == _newPassword ? null : "As senhas não coincidem.";
+
+    private async Task ChangePasswordAsync()
+    {
+        await _passwordForm.ValidateAsync();
+        if (!_passwordForm.IsValid)
+        {
+            return;
+        }
+        _changingPassword = true;
+        var result = await Users.ChangePasswordAsync(_currentPassword!, _newPassword!);
+        _changingPassword = false;
+        if (!result.Success)
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+            return;
+        }
+        Snackbar.Add("Senha alterada. Entre novamente.", Severity.Success);
+        await Session.LogoutAsync();
+    }
+
+    private async Task ExportAsync()
+    {
+        _exporting = true;
+        var file = await Users.ExportAsync();
+        _exporting = false;
+        if (file is null)
+        {
+            Snackbar.Add("Não foi possível gerar o arquivo. Tente novamente.", Severity.Error);
+            return;
+        }
+        await Js.InvokeVoidAsync("finanTrackDownload", "finantrack-dados.json", "application/json", file);
+        Snackbar.Add("Arquivo gerado.", Severity.Success);
+    }
+
+    private async Task RequestDeletionAsync()
+    {
+        await _deletionForm.ValidateAsync();
+        if (!_deletionForm.IsValid)
+        {
+            return;
+        }
+        var confirmed = await Dialogs.ShowMessageBoxAsync("Excluir conta",
+            "Você será desconectado e seus dados serão apagados em 30 dias, se não entrar novamente nesse prazo. Deseja continuar?",
+            yesText: "Solicitar exclusão", cancelText: "Cancelar");
+        if (confirmed != true)
+        {
+            return;
+        }
+        _deleting = true;
+        var result = await Users.RequestDeletionAsync(_deletionPassword!);
+        _deleting = false;
+        if (!result.Success)
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+            return;
+        }
+        Snackbar.Add("Pedido registrado. Entre na conta em até 30 dias para cancelar.", Severity.Info);
+        await Session.LogoutAsync();
+    }
+}

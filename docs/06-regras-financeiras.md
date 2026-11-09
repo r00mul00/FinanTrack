@@ -169,6 +169,19 @@ Job diário (02:30, `America/Sao_Paulo`, depois das recorrências) que também r
 - Receitas e parcelas de cartão não geram `DUE_DATE`; as parcelas são avisadas pela fatura.
 - Alterar o vencimento de uma transação gera novo aviso, se a nova data estiver na janela.
 
+## Conta do usuário
+
+- Senha, e-mail e exclusão exigem a senha atual; senha incorreta responde 422.
+- **Troca de senha** encerra todas as sessões.
+- **Troca de e-mail:** o endereço só muda ao abrir, logado na própria conta, o link enviado ao novo e-mail. Endereço já em uso responde igual e não recebe nada, para não revelar quais estão cadastrados; se for ocupado antes da confirmação, responde 409. O endereço antigo é avisado depois da troca.
+- **Moeda** (BRL, USD, EUR ou GBP) muda apenas o símbolo exibido, inclusive no PDF.
+- **Notificações:** com a opção desligada, o job deixa de gerar os avisos do grupo: orçamentos (`BUDGET_ALERT`, `BUDGET_EXCEEDED`) ou vencimentos (`DUE_DATE`, `INVOICE_DUE`).
+- **Exportação:** JSON com perfil, preferências e dados financeiros do usuário, sem hash de senha, tokens ou trilha de auditoria.
+
+### Exclusão da conta
+
+Carência de 30 dias a partir do pedido, que encerra todas as sessões. Entrar na conta nesse prazo cancela o pedido. Depois dele, um job diário (03:00, `America/Sao_Paulo`, também ao iniciar a aplicação) apaga todos os dados do usuário em uma transação por conta. A trilha de auditoria permanece, pois guarda apenas identificadores.
+
 ## Categorias
 
 Exclusão de categoria em uso exige `reassignTo`, com categoria de mesmo tipo, em uma única transação. Orçamentos seguem junto; se o destino já tiver orçamento naquele mês, o da categoria excluída é removido. Como alternativa, a categoria pode ser arquivada.
@@ -188,7 +201,7 @@ Registrar criação, alteração e exclusão de transações, compras, pagamento
 
 - O registro entra na transação da própria alteração: se ela for desfeita, o registro também é.
 - `changes` guarda os valores `before` e `after` dos campos auditados. Observações e notas, por serem texto livre, ficam de fora.
-- Eventos de segurança: login realizado, logout, redefinição de senha e reutilização de refresh token.
+- Eventos de segurança: login realizado, logout, redefinição e troca de senha, troca de e-mail, exportação de dados, pedido, cancelamento e conclusão da exclusão da conta, e reutilização de refresh token.
 - **Login recusado não é auditado:** a escrita extra só para e-mails existentes criaria diferença no tempo de resposta e ajudaria a descobrir quais estão cadastrados.
 - Lançamentos gerados por recorrência são auditados como criação de transação. As parcelas de cartão são cobertas pelo registro da compra.
 

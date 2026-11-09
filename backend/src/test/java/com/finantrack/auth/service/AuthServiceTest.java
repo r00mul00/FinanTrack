@@ -15,6 +15,7 @@ import com.finantrack.common.exception.EmailNotVerifiedException;
 import com.finantrack.common.exception.InvalidCredentialsException;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
+import com.finantrack.user.service.AccountDeletionService;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,7 @@ class AuthServiceTest {
     void setUp() {
         when(passwordEncoder.encode(anyString())).thenReturn(DUMMY_HASH);
         authService = new AuthService(userRepository, passwordEncoder, refreshTokenService, emailVerificationService,
-                userRegistrationService);
+                userRegistrationService, mock(AccountDeletionService.class));
     }
 
     @Test

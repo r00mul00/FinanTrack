@@ -50,7 +50,7 @@
 </MudPaper>
 
 @code {
-    private const string TooltipTitle = "{{SERIES_NAME}}: R$ {{Y_VALUE}}";
+    private static string TooltipTitle => "{{SERIES_NAME}}: " + Money.Symbol + " {{Y_VALUE}}";
     private const string TooltipValue = "N2";
 
     /// <summary>

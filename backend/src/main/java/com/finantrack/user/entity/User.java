@@ -69,6 +69,35 @@ public class User extends BaseEntity {
         this.passwordHash = newPasswordHash;
     }
 
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    /** Recebe o e-mail já normalizado e confirmado pelo link enviado ao novo endereço. */
+    public void changeEmail(String newEmail) {
+        this.email = newEmail;
+    }
+
+    public void changeCurrency(String newCurrency) {
+        this.currency = newCurrency;
+    }
+
+    public void changeTheme(Theme newTheme) {
+        this.theme = newTheme;
+    }
+
+    public void changeNotifyBudget(boolean enabled) {
+        this.notifyBudget = enabled;
+    }
+
+    public void changeNotifyDueDates(boolean enabled) {
+        this.notifyDueDates = enabled;
+    }
+
+    public void requestDeletion(Instant when) {
+        this.deletionRequestedAt = when;
+    }
+
     public String getName() {
         return name;
     }

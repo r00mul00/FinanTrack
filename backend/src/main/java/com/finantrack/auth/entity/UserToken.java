@@ -50,12 +50,22 @@ public class UserToken extends BaseEntity {
         this.expiresAt = expiresAt;
     }
 
+    /** Troca de e-mail: o novo endereço só vale depois de confirmado. */
+    public UserToken(User user, String tokenHash, Instant expiresAt, String newEmail) {
+        this(user, UserTokenType.EMAIL_CHANGE, tokenHash, expiresAt);
+        this.newEmail = newEmail;
+    }
+
     public boolean isUsable(Instant now) {
         return usedAt == null && expiresAt.isAfter(now);
     }
 
     public void markUsed(Instant when) {
         this.usedAt = when;
+    }
+
+    public String getNewEmail() {
+        return newEmail;
     }
 
     public User getUser() {

@@ -7,6 +7,7 @@ import com.finantrack.report.dto.ReportResponse;
 import com.finantrack.report.dto.ReportType;
 import com.finantrack.report.service.ReportExporter;
 import com.finantrack.report.service.ReportService;
+import com.finantrack.user.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,9 +29,12 @@ public class ReportController {
 
     private final ReportService service;
     private final ReportExporter exporter;
+    private final UserService userService;
     private final CurrentUser currentUser;
 
-    public ReportController(ReportService service, ReportExporter exporter, CurrentUser currentUser) {
+    public ReportController(ReportService service, ReportExporter exporter, CurrentUser currentUser,
+            UserService userService) {
+        this.userService = userService;
         this.service = service;
         this.exporter = exporter;
         this.currentUser = currentUser;
@@ -56,7 +60,7 @@ public class ReportController {
         }
 
         ReportResponse report = service.generate(currentUser.id(), reportType, new ReportFilter(month, year, from, to));
-        byte[] file = csv ? exporter.toCsv(report) : exporter.toPdf(report);
+        byte[] file = csv ? exporter.toCsv(report) : exporter.toPdf(report, userService.getById(currentUser.id()).currency());
         String fileName = "relatorio-%s-%s-a-%s.%s".formatted(reportType.slug(), report.from(), report.to(), format);
         return ResponseEntity.ok()
                 .contentType(csv ? new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8) : MediaType.APPLICATION_PDF)

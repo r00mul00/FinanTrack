@@ -1,6 +1,8 @@
 ﻿@attribute [AllowAnonymous]
+@implements IDisposable
+@inject AuthSession Session
 
-<MudThemeProvider Theme="FinanTrackTheme.Default" IsDarkMode="true" />
+<MudThemeProvider Theme="FinanTrackTheme.Default" IsDarkMode="@(Session.CurrentUser?.Theme != "LIGHT")" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -18,3 +20,11 @@
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
+}

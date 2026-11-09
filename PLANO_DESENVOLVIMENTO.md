@@ -23,7 +23,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída |
 | 6 | Recursos financeiros | Concluída |
-| 7 | Relatórios e Configurações | Em andamento (bloco 2: Configurações, próximo item 7.6) |
+| 7 | Relatórios e Configurações | Concluída (aguardando validação) |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
 | 10 | Portfólio | Não iniciada |
@@ -303,11 +303,11 @@ Saída: documentos em `docs/`.
 
 **Configurações (acréscimo de cronograma).** O módulo está no rascunho, mas não aparece em nenhuma fase.
 
-- [ ] 7.6 Alterar nome, e-mail (com validação) e senha.
-- [ ] 7.7 Configurar moeda e notificações.
-- [ ] 7.8 Alternar tema claro e escuro.
-- [ ] 7.9 Exportar dados pessoais.
-- [ ] 7.10 Solicitar exclusão da conta.
+- [x] 7.6 Alterar nome, e-mail (com validação) e senha.
+- [x] 7.7 Configurar moeda e notificações.
+- [x] 7.8 Alternar tema claro e escuro.
+- [x] 7.9 Exportar dados pessoais.
+- [x] 7.10 Solicitar exclusão da conta.
 
 **Portão de validação:** totais dos arquivos exportados iguais aos da tela com os mesmos filtros.
 

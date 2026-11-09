@@ -7,6 +7,7 @@ import com.finantrack.common.exception.EmailNotVerifiedException;
 import com.finantrack.common.exception.InvalidCredentialsException;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
+import com.finantrack.user.service.AccountDeletionService;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,11 +21,13 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
     private final UserRegistrationService userRegistrationService;
+    private final AccountDeletionService accountDeletionService;
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
             RefreshTokenService refreshTokenService, EmailVerificationService emailVerificationService,
-            UserRegistrationService userRegistrationService) {
+            UserRegistrationService userRegistrationService, AccountDeletionService accountDeletionService) {
+        this.accountDeletionService = accountDeletionService;
         this.userRepository = userRepository;
         this.userRegistrationService = userRegistrationService;
         this.passwordEncoder = passwordEncoder;
@@ -65,6 +68,7 @@ public class AuthService {
         if (!user.get().isEmailVerified()) {
             throw new EmailNotVerifiedException();
         }
+        accountDeletionService.cancelOnLogin(user.get());
         return refreshTokenService.startSession(user.get(), userAgent);
     }
 }

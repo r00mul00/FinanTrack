@@ -1,0 +1,89 @@
+@inject UserApi Users
+@inject AuthSession Session
+@inject ISnackbar Snackbar
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_loaded)
+{
+    <div class="ft-settings-section">
+        <div class="ft-field mb-4">
+            <span class="ft-field-label">Moeda</span>
+            <MudSelect T="string" @bind-Value="_currency" Variant="Variant.Outlined" aria-label="Moeda">
+                @foreach (var (code, label) in Money.Currencies)
+                {
+                    <MudSelectItem Value="code">@label</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                Altera apenas o símbolo exibido. Os valores não são convertidos.
+            </MudText>
+        </div>
+
+        <div class="ft-field mb-4">
+            <span class="ft-field-label">Tema</span>
+            <MudSelect T="string" @bind-Value="_theme" Variant="Variant.Outlined" aria-label="Tema">
+                <MudSelectItem Value="@("DARK")">Escuro</MudSelectItem>
+                <MudSelectItem Value="@("LIGHT")">Claro</MudSelectItem>
+            </MudSelect>
+        </div>
+
+        <span class="ft-field-label">Notificações</span>
+        <MudSwitch T="bool" @bind-Value="_notifyBudget" Color="Color.Primary" Label="Alertas de orçamento" />
+        <MudSwitch T="bool" @bind-Value="_notifyDueDates" Color="Color.Primary" Label="Contas e faturas a vencer" />
+
+        <div>
+            <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving" OnClick="SaveAsync">
+                @(_saving ? "Salvando..." : "Salvar preferências")
+            </MudButton>
+        </div>
+    </div>
+}
+else
+{
+    <MudSkeleton Height="240px" SkeletonType="SkeletonType.Rectangle" />
+}
+
+@code {
+    private string _currency = Money.DefaultCurrency;
+    private string _theme = "DARK";
+    private bool _notifyBudget;
+    private bool _notifyDueDates;
+    private bool _loaded;
+    private bool _saving;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var preferences = await Users.GetPreferencesAsync();
+        if (preferences is null)
+        {
+            _error = "Não foi possível carregar as preferências.";
+            return;
+        }
+        _currency = preferences.Currency;
+        _theme = preferences.Theme;
+        _notifyBudget = preferences.NotifyBudget;
+        _notifyDueDates = preferences.NotifyDueDates;
+        _loaded = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        var result = await Users.UpdatePreferencesAsync(new PreferencesDto(_currency, _theme, _notifyBudget, _notifyDueDates));
+        _saving = false;
+        if (!result.Success)
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+            return;
+        }
+        if (Session.CurrentUser is { } user)
+        {
+            Session.UpdateCurrentUser(user with { Currency = _currency, Theme = _theme });
+        }
+        Snackbar.Add("Preferências salvas.", Severity.Success);
+    }
+}

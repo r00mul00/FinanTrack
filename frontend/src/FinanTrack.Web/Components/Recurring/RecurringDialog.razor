@@ -20,7 +20,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="ft-field ft-rec-amount">
-                        <span class="ft-field-label">Valor (R$)</span>
+                        <span class="ft-field-label">Valor (@Money.Symbol)</span>
                         <MudNumericField T="decimal?" @bind-Value="_amount" Variant="Variant.Outlined"
                                          Min="0.01m" Max="Money.MaxValue" Culture="Money.Culture" Format="N2"
                                          HideSpinButtons="true" Immediate="true" Required="true" RequiredError="Informe o valor." />
