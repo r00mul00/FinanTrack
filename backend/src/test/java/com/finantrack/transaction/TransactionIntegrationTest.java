@@ -348,6 +348,22 @@ class TransactionIntegrationTest {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void archivedAccountIsRejectedForNewButKeptOnExisting() throws Exception {
+        UUID id = create("Antiga", "10.00", "EXPENSE", "COMPLETED", food, "2026-03-01");
+        jdbcTemplate.update("update accounts set archived = true where id = ?", account);
+
+        send(post(URL), ana, json("Nova", "1", "EXPENSE", "PENDING", food, account, "2026-03-01"))
+                .andExpect(status().isUnprocessableContent());
+        send(put(URL + "/" + id), ana, json("Antiga editada", "10.00", "EXPENSE", "COMPLETED", food, account, "2026-03-01"))
+                .andExpect(status().isOk());
+
+        UUID other = account(ana, "Outra", "0");
+        jdbcTemplate.update("update accounts set archived = true where id = ?", other);
+        send(put(URL + "/" + id), ana, json("Antiga editada", "10.00", "EXPENSE", "COMPLETED", food, other, "2026-03-01"))
+                .andExpect(status().isUnprocessableContent());
+    }
+
     private ResultActions balance() throws Exception {
         return send(get(ACCOUNTS + "/" + account), ana, null);
     }

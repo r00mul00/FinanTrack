@@ -332,8 +332,84 @@ class RecurringIntegrationTest {
     }
 
     @Test
+    void staleVersionIsRejectedAndChangesNothing() throws Exception {
+        UUID id = create("Original", TODAY.plusDays(1), null);
+
+        send(put(URL + "/" + id), ana, withVersion(body("Alterada", "EXPENSE", rent, "MONTHLY", TODAY.plusDays(1), null), 99))
+                .andExpect(status().isConflict());
+
+        send(get(URL + "/" + id), ana, null).andExpect(jsonPath("$.description").value("Original"));
+    }
+
+    @Test
+    void changingFrequencyRealignsNextCycleFromStartDate() throws Exception {
+        UUID id = create("Conta", TODAY, null);
+        LocalDate previousNext = TODAY.plusMonths(1);
+        long weeks = (java.time.temporal.ChronoUnit.DAYS.between(TODAY, previousNext) + 6) / 7;
+        LocalDate expected = TODAY.plusWeeks(weeks);
+
+        send(put(URL + "/" + id), ana, body("Conta", "EXPENSE", rent, "WEEKLY", TODAY, null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nextOccurrenceDate").value(expected.toString()));
+
+        send(get(URL + "/" + id + "/upcoming").param("count", "2"), ana, null)
+                .andExpect(jsonPath("$[0]").value(expected.toString()))
+                .andExpect(jsonPath("$[1]").value(expected.plusWeeks(1).toString()));
+        // O ciclo de hoje, gerado na frequência antiga, continua sendo o único lançamento.
+        assertThat(transactionRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void finishedRecurrenceCannotBeResumed() throws Exception {
+        LocalDate start = TODAY.minusMonths(3);
+        UUID id = create("Curta", start, start.plusMonths(1));
+
+        send(post(URL + "/" + id + "/resume"), ana, null).andExpect(status().isUnprocessableContent());
+        send(get(URL + "/" + id), ana, null).andExpect(jsonPath("$.status").value("FINISHED"));
+    }
+
+    @Test
+    void resumingActiveRecurrenceChangesNothing() throws Exception {
+        UUID id = create("Conta", TODAY.plusDays(3), null);
+
+        send(post(URL + "/" + id + "/resume"), ana, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.nextOccurrenceDate").value(TODAY.plusDays(3).toString()));
+    }
+
+    @Test
+    void archivedReferencesAreRejectedForNewButKeptOnExisting() throws Exception {
+        UUID id = create("Conta", TODAY.plusDays(1), null);
+        jdbcTemplate.update("update categories set archived = true where id = ?", rent);
+        jdbcTemplate.update("update accounts set archived = true where id = ?", account);
+
+        send(post(URL), ana, body("Nova", "EXPENSE", rent, "MONTHLY", TODAY.plusDays(1), null))
+                .andExpect(status().isUnprocessableContent());
+        send(put(URL + "/" + id), ana, body("Mantida", "EXPENSE", rent, "MONTHLY", TODAY.plusDays(1), null))
+                .andExpect(status().isOk());
+
+        UUID otherArchived = category(ana, "Arquivada", CategoryType.EXPENSE);
+        jdbcTemplate.update("update categories set archived = true where id = ?", otherArchived);
+        send(put(URL + "/" + id), ana, body("Mantida", "EXPENSE", otherArchived, "MONTHLY", TODAY.plusDays(1), null))
+                .andExpect(status().isUnprocessableContent());
+
+        UUID otherAccount = accountRepository.save(new Account(ana, "Outra", AccountType.CHECKING, BigDecimal.ZERO)).getId();
+        jdbcTemplate.update("update categories set archived = false where id = ?", rent);
+        send(post(URL), ana, body("Nova", "EXPENSE", rent, "MONTHLY", TODAY.plusDays(1), null))
+                .andExpect(status().isUnprocessableContent());
+        send(post(URL), ana, body("Nova", "EXPENSE", rent, "MONTHLY", TODAY.plusDays(1), null)
+                        .replace(account.toString(), otherAccount.toString()))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
+    }
+
+    private String withVersion(String json, long version) {
+        return json.trim().replaceFirst("}$", ",\"version\":" + version + "}");
     }
 
     private UUID category(UUID user, String name, CategoryType type) {

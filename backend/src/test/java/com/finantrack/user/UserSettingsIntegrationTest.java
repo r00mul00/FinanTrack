@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,6 +31,7 @@ import com.finantrack.notification.service.NotificationJob;
 import com.finantrack.user.entity.User;
 import com.finantrack.user.repository.UserRepository;
 import com.finantrack.user.service.AccountDeletionJob;
+import com.finantrack.user.service.AccountDeletionService;
 import com.jayway.jsonpath.JsonPath;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -92,6 +94,9 @@ class UserSettingsIntegrationTest {
 
     @Autowired
     private AccountDeletionJob deletionJob;
+
+    @Autowired
+    private AccountDeletionService deletionService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -334,6 +339,31 @@ class UserSettingsIntegrationTest {
     }
 
     /** Percorre o catálogo do banco: uma tabela nova com user_id não escapa da exclusão sem o teste notar. */
+    @Test
+    void repeatedDeletionRequestKeepsTheOriginalDeadline() throws Exception {
+        requestDeletion(ana).andExpect(status().isAccepted());
+        Instant first = deletionRequestedAt(ana);
+
+        requestDeletion(ana).andExpect(status().isAccepted());
+
+        assertThat(deletionRequestedAt(ana)).isEqualTo(first);
+        assertThat(auditCount(ana, "DELETION_REQUEST")).isEqualTo(1);
+        verify(emailSender, times(1)).send(eq("ana@exemplo.com"), anyString(), anyString());
+    }
+
+    @Test
+    void purgeSkipsAccountWhoseRequestWasCanceledMeanwhile() {
+        Instant now = Instant.now();
+        requestedAt(ana, now.minus(31, ChronoUnit.DAYS));
+        assertThat(deletionService.findDue(now)).contains(ana);
+
+        // Login entre a consulta do job e a exclusão.
+        jdbc.update("update users set deletion_requested_at = null where id = ?", ana);
+
+        assertThat(deletionService.purge(ana, now)).isFalse();
+        assertThat(userRepository.existsById(ana)).isTrue();
+    }
+
     private List<String> rowsOwnedBy(UUID userId) {
         return jdbc.queryForList("""
                 select table_name from information_schema.columns

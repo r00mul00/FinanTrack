@@ -315,6 +315,39 @@ class GoalIntegrationTest {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void getReturnsCalculatedFields() throws Exception {
+        UUID id = create("1000.00", "250.00");
+
+        send(get(URL + "/" + id), ana, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Viagem"))
+                .andExpect(jsonPath("$.currentAmount").value(250.00))
+                .andExpect(jsonPath("$.remainingAmount").value(750.00))
+                .andExpect(jsonPath("$.progress").value(25.00))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void depositCannotPushBalanceAboveMaximumAmount() throws Exception {
+        UUID id = create("999999999999.99", "999999999999.00");
+
+        move(id, "deposits", "1.00", ana).andExpect(status().isUnprocessableContent());
+        move(id, "deposits", "0.99", ana).andExpect(status().isOk());
+
+        assertThat(balance(id)).isEqualByComparingTo("999999999999.99");
+    }
+
+    @Test
+    void movementHistoryRejectsInvalidPaging() throws Exception {
+        UUID id = create("1000.00", "0");
+
+        send(get(URL + "/" + id + "/movements").param("page", "-1"), ana, null).andExpect(status().isBadRequest());
+        send(get(URL + "/" + id + "/movements").param("size", "0"), ana, null).andExpect(status().isBadRequest());
+        send(get(URL + "/" + id + "/movements").param("size", "101"), ana, null).andExpect(status().isBadRequest());
+        send(get(URL + "/" + id + "/movements").param("size", "100"), ana, null).andExpect(status().isOk());
+    }
+
     private BigDecimal balance(UUID id) {
         return goalRepository.findById(id).orElseThrow().getCurrentAmount();
     }

@@ -2,8 +2,11 @@ package com.finantrack.category;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -238,6 +241,31 @@ class CategoryIntegrationTest {
     @Test
     void requiresAuthentication() throws Exception {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getsOneAndListsBothTypesWithoutFilter() throws Exception {
+        UUID id = create(ana, "Mercado", "EXPENSE");
+        create(ana, "Bônus", "INCOME");
+        create(bruno, "Do Bruno", "EXPENSE");
+
+        send(get(URL + "/" + id), ana, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Mercado"))
+                .andExpect(jsonPath("$.type").value("EXPENSE"));
+        send(get(URL), ana, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", hasItems("Mercado", "Bônus")))
+                .andExpect(jsonPath("$[*].name", not(hasItem("Do Bruno"))));
+    }
+
+    @Test
+    void renamingOntoAnotherCategoryOfSameTypeIsRejected() throws Exception {
+        create(ana, "Primeira", "EXPENSE");
+        UUID second = create(ana, "Segunda", "EXPENSE");
+
+        send(put(URL + "/" + second), ana, body(" primeira ", "EXPENSE")).andExpect(status().isConflict());
+        send(put(URL + "/" + second), ana, body("SEGUNDA", "EXPENSE")).andExpect(status().isOk());
     }
 
     private ResultActions deleteTo(UUID id, UUID target) throws Exception {
