@@ -86,6 +86,11 @@ h1:focus {
     text-overflow: ellipsis;
 }
 
+/* Pesquisa global */
+.ft-search-result {
+    min-width: 0;
+}
+
 /* Central de notificações */
 .ft-notifications {
     width: min(380px, calc(100vw - 32px));

@@ -15,6 +15,8 @@ public interface FinancialGoalRepository extends JpaRepository<FinancialGoal, UU
     /** Metas ativas primeiro, depois pelo prazo mais próximo. */
     List<FinancialGoal> findAllByUserIdOrderByStatusAscDeadlineAsc(UUID userId);
 
+    List<FinancialGoal> findTop5ByUserIdAndNameContainingIgnoreCaseOrderByNameAsc(UUID userId, String term);
+
     Optional<FinancialGoal> findByIdAndUserId(UUID id, UUID userId);
 
     /** O lock serializa movimentações simultâneas: cada uma enxerga o saldo já atualizado. */

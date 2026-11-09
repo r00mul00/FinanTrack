@@ -1,0 +1,81 @@
+@inject SearchApi Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<MudAutocomplete @ref="_autocomplete"
+                 T="SearchResult"
+                 Class="ft-search"
+                 Placeholder="Pesquisar"
+                 aria-label="Pesquisa global"
+                 Variant="Variant.Outlined"
+                 Margin="Margin.Dense"
+                 Adornment="Adornment.Start"
+                 AdornmentIcon="@Icons.Material.Rounded.Search"
+                 SearchFunc="SearchAsync"
+                 ToStringFunc="@(item => item?.Title)"
+                 ValueChanged="OpenAsync"
+                 MinCharacters="2"
+                 DebounceInterval="400"
+                 Clearable="true"
+                 ResetValueOnEmptyText="true"
+                 CoerceText="false">
+    <ItemTemplate Context="item">
+        <div class="d-flex align-center gap-3">
+            <MudIcon Icon="@item.Type.Icon()" Size="Size.Small" />
+            <div class="ft-search-result">
+                <MudText Typo="Typo.body2" Class="ft-ellipsis">@item.Title</MudText>
+                <MudText Typo="Typo.caption" Class="ft-ellipsis" Style="color: var(--mud-palette-text-secondary);">@Caption(item)</MudText>
+            </div>
+        </div>
+    </ItemTemplate>
+    <NoItemsTemplate>
+        <MudText Typo="Typo.body2" Class="pa-2">Nenhum resultado encontrado.</MudText>
+    </NoItemsTemplate>
+</MudAutocomplete>
+
+@code {
+    private MudAutocomplete<SearchResult> _autocomplete = default!;
+    private string _lastQuery = "";
+
+    private static string Caption(SearchResult item) =>
+        item.Detail is null ? item.Type.Label() : $"{item.Type.Label()} · {item.Detail}";
+
+    private async Task<IEnumerable<SearchResult>> SearchAsync(string query, CancellationToken cancellationToken)
+    {
+        _lastQuery = query;
+        try
+        {
+            var results = await Api.SearchAsync(query, cancellationToken);
+            if (results is null)
+            {
+                Snackbar.Add("Não foi possível pesquisar. Tente novamente.", Severity.Error);
+            }
+            return results ?? [];
+        }
+        catch (OperationCanceledException)
+        {
+            // Uma pesquisa mais nova substituiu esta; não é um erro.
+            return [];
+        }
+    }
+
+    private async Task OpenAsync(SearchResult? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+        await _autocomplete.ClearAsync();
+        Navigation.NavigateTo(RouteOf(item));
+    }
+
+    /// <summary>Uma transação abre a listagem já filtrada pelo termo pesquisado.</summary>
+    private string RouteOf(SearchResult item) => item.Type switch
+    {
+        SearchResultType.TRANSACTION => $"/transacoes?busca={Uri.EscapeDataString(_lastQuery)}",
+        SearchResultType.CATEGORY => "/categorias",
+        SearchResultType.GOAL => "/metas",
+        SearchResultType.CARD => $"/cartoes/{item.Id}",
+        _ => "/recorrencias"
+    };
+}

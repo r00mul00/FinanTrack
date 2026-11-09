@@ -214,6 +214,11 @@
         [nameof(TransactionResponse.Status)] = "status"
     };
 
+    /// <summary>Termo vindo da pesquisa global.</summary>
+    [SupplyParameterFromQuery(Name = "busca")]
+    public string? Busca { get; set; }
+
+    private string? _appliedBusca;
     private MudDataGrid<TransactionResponse> _grid = default!;
     private List<CategoryResponse> _categories = [];
     private List<AccountResponse> _accounts = [];
@@ -249,6 +254,21 @@
         _accounts = await accounts ?? [];
         _cards = (await cards ?? []).Where(c => !c.Archived).ToList();
         _ready = true;
+    }
+
+    /// <summary>Na primeira carga a grade ainda não existe e já lê o termo ao buscar os dados.</summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Busca == _appliedBusca)
+        {
+            return;
+        }
+        _appliedBusca = Busca;
+        _search = Busca;
+        if (_grid is not null)
+        {
+            await ApplyFiltersAsync();
+        }
     }
 
     private async Task<GridData<TransactionResponse>> LoadServerData(GridState<TransactionResponse> state, CancellationToken cancellationToken)

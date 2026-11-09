@@ -125,7 +125,7 @@ Lançamentos com `kind` diferente de `STANDARD` são alterados apenas pelos endp
 | GET | `/notifications` | Listar (`?unread=&page=&size=`), com o total de não lidas |
 | POST | `/notifications/{id}/read` | Marcar como lida |
 | POST | `/notifications/read-all` | Marcar todas |
-| GET | `/search?q=` | Pesquisa global |
+| GET | `/search?q=` | Pesquisa global em transações, categorias, metas, cartões e recorrências: até 5 itens por tipo, a partir de 2 caracteres |
 
 ## Relatórios
 

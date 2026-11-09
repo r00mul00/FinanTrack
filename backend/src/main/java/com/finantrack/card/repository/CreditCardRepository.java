@@ -14,6 +14,8 @@ public interface CreditCardRepository extends JpaRepository<CreditCard, UUID> {
 
     List<CreditCard> findAllByUserIdOrderByNicknameAsc(UUID userId);
 
+    List<CreditCard> findTop5ByUserIdAndNicknameContainingIgnoreCaseOrderByNicknameAsc(UUID userId, String term);
+
     Optional<CreditCard> findByIdAndUserId(UUID id, UUID userId);
 
     /** Compra, cancelamento e pagamento passam por este lock: o limite nunca é lido desatualizado. */

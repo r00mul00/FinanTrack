@@ -50,6 +50,7 @@ builder.Services.AddScoped<GoalApi>();
 builder.Services.AddScoped<CardApi>();
 builder.Services.AddScoped<RecurringApi>();
 builder.Services.AddScoped<NotificationApi>();
+builder.Services.AddScoped<SearchApi>();
 builder.Services.AddMudServices(config =>
 {
     // No canto inferior, os avisos não cobrem o botão principal das páginas.

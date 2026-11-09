@@ -120,6 +120,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             + " and t.dueDate between :from and :to")
     List<Transaction> findPendingExpensesDueBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    List<Transaction> findTop5ByUserIdAndDescriptionContainingIgnoreCaseOrderByTransactionDateDesc(UUID userId, String term);
+
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByAccountId(UUID accountId);

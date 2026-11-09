@@ -17,6 +17,8 @@ public interface RecurringTransactionRepository extends JpaRepository<RecurringT
 
     List<RecurringTransaction> findAllByUserIdOrderByDescriptionAsc(UUID userId);
 
+    List<RecurringTransaction> findTop5ByUserIdAndDescriptionContainingIgnoreCaseOrderByDescriptionAsc(UUID userId, String term);
+
     Optional<RecurringTransaction> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByAccountId(UUID accountId);
