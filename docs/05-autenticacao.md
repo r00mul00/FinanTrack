@@ -81,7 +81,7 @@ sequenceDiagram
 | Validade | Validação: 24 h; recuperação: 30 min |
 | Enumeração | `register`, `forgot-password` e `resend-verification` respondem 202 de forma idêntica, com o e-mail existindo ou não |
 | Efeito da nova senha | Revoga todas as sessões do usuário |
-| Limite de tentativas | Login, cadastro e recuperação, por IP e por e-mail (429) |
+| Limite de tentativas | Login, cadastro e recuperação, por IP e por e-mail (429). Troca de senha, troca de e-mail e pedido de exclusão, por conta, com um contador comum às três rotas (429) |
 
 ## Senhas
 

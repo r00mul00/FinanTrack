@@ -317,7 +317,7 @@ Saída: documentos em `docs/`.
 
 - [x] 8.1 Completar os testes: autenticação, cadastro, transações, saldo, categorias, orçamentos, metas, cartões, parcelamento, isolamento de dados e tratamento de erros.
 - [ ] 8.2 Testar integração com PostgreSQL real, por exemplo com Testcontainers (acréscimo).
-- [ ] 8.3 Revisar a segurança pela checklist de referência.
+- [x] 8.3 Revisar a segurança pela checklist de referência.
 - [x] 8.4 Revisar autorização por usuário em todos os endpoints.
 - [ ] 8.5 Analisar performance: consultas N+1, índices e paginação.
 - [ ] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
@@ -425,12 +425,12 @@ Aplicar DTOs de entrada e saída, Bean Validation, tratamento global de exceçõ
 
 ## Checklist de segurança
 
-- [ ] Senhas com BCrypt.
-- [ ] JWT validado em toda requisição protegida.
-- [ ] Autorização por usuário em todas as operações.
-- [ ] CORS restrito às origens permitidas.
-- [ ] Validação de entrada.
-- [ ] Erros tratados sem expor informações internas.
-- [ ] Segredos em variáveis de ambiente.
-- [ ] Tokens protegidos no frontend; sem tokens sensíveis em `localStorage` sem avaliação de riscos.
-- [ ] Nenhum número completo de cartão, CVV ou senha de cartão armazenado.
+- [x] Senhas com BCrypt.
+- [x] JWT validado em toda requisição protegida.
+- [x] Autorização por usuário em todas as operações.
+- [x] CORS restrito às origens permitidas.
+- [x] Validação de entrada.
+- [ ] Erros tratados sem expor informações internas. Pendente: item 8.6.
+- [x] Segredos em variáveis de ambiente.
+- [x] Tokens protegidos no frontend; sem tokens sensíveis em `localStorage` sem avaliação de riscos.
+- [x] Nenhum número completo de cartão, CVV ou senha de cartão armazenado.
