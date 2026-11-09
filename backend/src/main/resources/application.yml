@@ -15,6 +15,10 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+          # IDs UUID gerados pela aplicação permitem agrupar INSERTs, como os das parcelas.
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}

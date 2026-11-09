@@ -25,6 +25,8 @@ import com.finantrack.transaction.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -97,9 +99,10 @@ public class PurchaseService {
                 request.description(), request.totalAmount(), request.installments(), request.purchaseDate()));
 
         YearMonth firstMonth = InvoiceCalendar.referenceMonthOf(request.purchaseDate(), card.getClosingDay());
+        Map<YearMonth, CreditCardInvoice> invoicesByMonth = invoicesFor(card, firstMonth, amounts.size());
         for (int i = 0; i < amounts.size(); i++) {
             int number = i + 1;
-            CreditCardInvoice invoice = invoiceFor(card, firstMonth.plusMonths(i));
+            CreditCardInvoice invoice = invoicesByMonth.get(firstMonth.plusMonths(i));
             String description = amounts.size() == 1
                     ? request.description()
                     : "%s (%d/%d)".formatted(request.description(), number, amounts.size());
@@ -143,11 +146,28 @@ public class PurchaseService {
                 "categoryId", purchase.getCategoryId(), "purchaseDate", purchase.getPurchaseDate());
     }
 
-    private CreditCardInvoice invoiceFor(CreditCard card, YearMonth month) {
-        return invoices.findByCardIdAndReferenceMonth(card.getId(), month.atDay(1))
-                .orElseGet(() -> invoices.saveAndFlush(new CreditCardInvoice(card.getId(), month.atDay(1),
+    /**
+     * Faturas de todos os meses da compra em uma consulta; as que faltam são criadas
+     * juntas. O lock do cartão impede que outra compra crie as mesmas ao mesmo tempo.
+     */
+    private Map<YearMonth, CreditCardInvoice> invoicesFor(CreditCard card, YearMonth first, int months) {
+        YearMonth last = first.plusMonths(months - 1L);
+        Map<YearMonth, CreditCardInvoice> byMonth = new HashMap<>();
+        invoices.findAllByCardIdAndReferenceMonthBetween(card.getId(), first.atDay(1), last.atDay(1))
+                .forEach(invoice -> byMonth.put(YearMonth.from(invoice.getReferenceMonth()), invoice));
+
+        List<CreditCardInvoice> missing = new ArrayList<>();
+        for (YearMonth month = first; !month.isAfter(last); month = month.plusMonths(1)) {
+            if (!byMonth.containsKey(month)) {
+                CreditCardInvoice invoice = new CreditCardInvoice(card.getId(), month.atDay(1),
                         InvoiceCalendar.closingDate(month, card.getClosingDay()),
-                        InvoiceCalendar.dueDate(month, card.getClosingDay(), card.getDueDay()))));
+                        InvoiceCalendar.dueDate(month, card.getClosingDay(), card.getDueDay()));
+                missing.add(invoice);
+                byMonth.put(month, invoice);
+            }
+        }
+        invoices.saveAll(missing);
+        return byMonth;
     }
 
     private Category expenseCategory(UUID categoryId, UUID userId) {

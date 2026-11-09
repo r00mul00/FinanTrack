@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CreditCardInvoiceRepository extends JpaRepository<CreditCardInvoice, UUID> {
 
-    Optional<CreditCardInvoice> findByCardIdAndReferenceMonth(UUID cardId, LocalDate referenceMonth);
+    List<CreditCardInvoice> findAllByCardIdAndReferenceMonthBetween(UUID cardId, LocalDate first, LocalDate last);
 
     Optional<CreditCardInvoice> findByIdAndCardId(UUID id, UUID cardId);
 

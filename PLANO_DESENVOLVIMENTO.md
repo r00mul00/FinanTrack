@@ -319,7 +319,7 @@ Saída: documentos em `docs/`.
 - [ ] 8.2 Testar integração com PostgreSQL real, por exemplo com Testcontainers (acréscimo).
 - [x] 8.3 Revisar a segurança pela checklist de referência.
 - [x] 8.4 Revisar autorização por usuário em todos os endpoints.
-- [ ] 8.5 Analisar performance: consultas N+1, índices e paginação.
+- [x] 8.5 Analisar performance: consultas N+1, índices e paginação.
 - [x] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
 - [ ] 8.7 Refatorar.
 - [ ] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
