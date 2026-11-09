@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @attribute [AllowAnonymous]
 @using Microsoft.AspNetCore.Components.Sections
+@using FinanTrack.Web.Components.Notifications
 @inject AuthSession Session
 @inject NavigationManager Navigation
 
@@ -19,7 +20,7 @@
                 }
                 <MudSpacer />
 
-                @* Pesquisa e notificações dependem da Fase 6; ficam desabilitadas até lá. *@
+                @* A pesquisa global é o item 6.23; fica desabilitada até lá. *@
                 <div class="d-none d-sm-flex flex-grow-1 justify-end mr-2">
                     <MudTextField T="string"
                                   Class="ft-search"
@@ -33,9 +34,7 @@
                 <div class="d-none d-md-flex mr-2">
                     <SectionOutlet SectionName="@TopBarActions" />
                 </div>
-                <MudTooltip Text="Notificações: disponível na Fase 6">
-                    <MudIconButton Icon="@Icons.Material.Rounded.Notifications" Color="Color.Inherit" Disabled="true" aria-label="Notificações" />
-                </MudTooltip>
+                <NotificationBell />
 
                 <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" AriaLabel="Menu do perfil">
                     <ActivatorContent Context="menu">

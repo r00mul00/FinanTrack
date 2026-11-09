@@ -1,0 +1,105 @@
+@inject NotificationApi Api
+@inject ISnackbar Snackbar
+
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" AriaLabel="Notificações">
+    <ActivatorContent Context="menu">
+        <MudBadge Content="@BadgeText" Visible="@(_unreadCount > 0)" Color="Color.Error" Overlap="true">
+            <MudIconButton Icon="@Icons.Material.Rounded.Notifications"
+                           Color="Color.Inherit"
+                           aria-label="@AriaLabel"
+                           OnClick="@(async e => { await menu.ToggleAsync(e); await LoadAsync(); })" />
+        </MudBadge>
+    </ActivatorContent>
+    <ChildContent>
+        <div class="ft-notifications">
+            <div class="ft-notifications-header">
+                <MudText Typo="Typo.subtitle1">Notificações</MudText>
+                <MudButton Size="Size.Small"
+                           Color="Color.Primary"
+                           Disabled="@(_unreadCount == 0 || _busy)"
+                           OnClick="MarkAllReadAsync">Marcar todas como lidas</MudButton>
+            </div>
+            <MudDivider />
+            @if (_failed)
+            {
+                <MudText Typo="Typo.body2" Class="pa-4">Não foi possível carregar as notificações.</MudText>
+            }
+            else if (_items.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="pa-4">Nenhuma notificação por aqui.</MudText>
+            }
+            else
+            {
+                <div class="ft-notifications-list">
+                    @foreach (var item in _items)
+                    {
+                        <button type="button"
+                                class="@($"ft-notification {(item.ReadAt is null ? "unread" : "")}")"
+                                disabled="@_busy"
+                                @onclick="() => MarkReadAsync(item)">
+                            <MudIcon Icon="@NotificationDisplay.IconOf(item.Type)" Color="@NotificationDisplay.ColorOf(item.Type)" Size="Size.Small" />
+                            <span class="ft-notification-body">
+                                <span class="ft-notification-title">@item.Title</span>
+                                <span class="ft-notification-message">@item.Message</span>
+                                <span class="ft-notification-date">@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    private List<NotificationResponse> _items = [];
+    private long _unreadCount;
+    private bool _failed;
+    private bool _busy;
+
+    private string BadgeText => _unreadCount > 99 ? "99+" : _unreadCount.ToString();
+
+    private string AriaLabel => _unreadCount > 0 ? $"Notificações: {_unreadCount} não lidas" : "Notificações";
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.ListAsync();
+        _failed = result is null;
+        if (result is not null)
+        {
+            _items = result.Notifications.Content;
+            _unreadCount = result.UnreadCount;
+        }
+    }
+
+    private async Task MarkReadAsync(NotificationResponse item)
+    {
+        if (item.ReadAt is null)
+        {
+            await RunAsync(() => Api.MarkReadAsync(item.Id));
+        }
+    }
+
+    private Task MarkAllReadAsync() => RunAsync(Api.MarkAllReadAsync);
+
+    private async Task RunAsync(Func<Task<ApiResult>> action)
+    {
+        if (_busy)
+        {
+            return;
+        }
+        _busy = true;
+        var result = await action();
+        if (result.Success)
+        {
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.Message!, Severity.Error);
+        }
+        _busy = false;
+    }
+}

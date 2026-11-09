@@ -17,4 +17,6 @@ public interface CreditCardInvoiceRepository extends JpaRepository<CreditCardInv
     List<CreditCardInvoice> findAllByCardIdOrderByReferenceMonthDesc(UUID cardId);
 
     List<CreditCardInvoice> findAllByCardIdIn(Collection<UUID> cardIds);
+
+    List<CreditCardInvoice> findAllByDueDateBetween(LocalDate from, LocalDate to);
 }

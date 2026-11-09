@@ -113,6 +113,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     List<CategoryTotal> sumCommittedByCategory(@Param("userId") UUID userId, @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
+    @Query("select t from Transaction t"
+            + " where t.status = com.finantrack.transaction.entity.TransactionStatus.PENDING"
+            + " and t.kind = com.finantrack.transaction.entity.TransactionKind.STANDARD"
+            + " and t.type = com.finantrack.transaction.entity.TransactionType.EXPENSE"
+            + " and t.dueDate between :from and :to")
+    List<Transaction> findPendingExpensesDueBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByAccountId(UUID accountId);

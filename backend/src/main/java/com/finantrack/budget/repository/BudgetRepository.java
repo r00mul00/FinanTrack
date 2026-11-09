@@ -15,6 +15,8 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     List<Budget> findAllByUserIdAndReferenceMonth(UUID userId, LocalDate referenceMonth);
 
+    List<Budget> findAllByReferenceMonth(LocalDate referenceMonth);
+
     Optional<Budget> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByUserIdAndCategoryIdAndReferenceMonth(UUID userId, UUID categoryId, LocalDate referenceMonth);

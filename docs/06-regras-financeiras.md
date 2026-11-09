@@ -142,6 +142,21 @@ Compra só pode ser cancelada se nenhuma parcela estiver em fatura com pagamento
 - Ao criar ou reativar, os ciclos já devidos são gerados na hora; o job também roda ao iniciar a aplicação, para recuperar ciclos perdidos.
 - Excluir a recorrência mantém os lançamentos já gerados, sem o vínculo.
 
+## Notificações
+
+Job diário (02:30, `America/Sao_Paulo`, depois das recorrências) que também roda ao iniciar a aplicação. Um aviso por evento, garantido pelo índice único `(user_id, dedupe_key)`.
+
+| Tipo | Quando | Chave |
+|---|---|---|
+| `BUDGET_ALERT` | Orçamento do mês corrente no estado de alerta | Orçamento |
+| `BUDGET_EXCEEDED` | Orçamento do mês corrente excedido | Orçamento |
+| `DUE_DATE` | Despesa comum `PENDING` vencendo de hoje a 3 dias | Transação + vencimento |
+| `INVOICE_DUE` | Fatura com valor em aberto vencendo de hoje a 3 dias | Fatura |
+
+- Quem excede sem passar pelo alerta recebe só o aviso de excedido.
+- Receitas e parcelas de cartão não geram `DUE_DATE`; as parcelas são avisadas pela fatura.
+- Alterar o vencimento de uma transação gera novo aviso, se a nova data estiver na janela.
+
 ## Categorias
 
 Exclusão de categoria em uso exige `reassignTo`, com categoria de mesmo tipo, em uma única transação. Orçamentos seguem junto; se o destino já tiver orçamento naquele mês, o da categoria excluída é removido. Como alternativa, a categoria pode ser arquivada.

@@ -86,6 +86,70 @@ h1:focus {
     text-overflow: ellipsis;
 }
 
+/* Central de notificações */
+.ft-notifications {
+    width: min(380px, calc(100vw - 32px));
+}
+
+.ft-notifications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 16px;
+}
+
+.ft-notifications-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ft-notification {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    border: 0;
+    border-left: 3px solid transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    background: transparent;
+}
+
+.ft-notification.unread {
+    border-left-color: var(--mud-palette-primary);
+    background: var(--mud-palette-action-default-hover);
+    cursor: pointer;
+}
+
+.ft-notification:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -2px;
+}
+
+.ft-notification-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ft-notification-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.ft-notification-message {
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+}
+
+.ft-notification-date {
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-secondary);
+}
+
 /* Telas de acesso */
 .ft-auth-page {
     display: flex;

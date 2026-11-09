@@ -122,7 +122,7 @@ Lançamentos com `kind` diferente de `STANDARD` são alterados apenas pelos endp
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/notifications` | Listar (`?unread=`) |
+| GET | `/notifications` | Listar (`?unread=&page=&size=`), com o total de não lidas |
 | POST | `/notifications/{id}/read` | Marcar como lida |
 | POST | `/notifications/read-all` | Marcar todas |
 | GET | `/search?q=` | Pesquisa global |
