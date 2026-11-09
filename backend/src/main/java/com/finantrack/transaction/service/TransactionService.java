@@ -2,6 +2,9 @@ package com.finantrack.transaction.service;
 
 import com.finantrack.account.entity.Account;
 import com.finantrack.account.repository.AccountRepository;
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.category.entity.Category;
 import com.finantrack.category.repository.CategoryRepository;
 import com.finantrack.common.dto.PageResponse;
@@ -35,13 +38,15 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final TransactionMapper mapper;
+    private final AuditRecorder audit;
 
     public TransactionService(TransactionRepository repository, AccountRepository accountRepository,
-            CategoryRepository categoryRepository, TransactionMapper mapper) {
+            CategoryRepository categoryRepository, TransactionMapper mapper, AuditRecorder audit) {
         this.repository = repository;
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
         this.mapper = mapper;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +69,8 @@ public class TransactionService {
     public TransactionResponse create(TransactionRequest request, UUID userId) {
         Reference reference = resolve(request, userId, null);
         Transaction transaction = repository.saveAndFlush(new Transaction(userId, details(request)));
+        audit.record(userId, AuditAction.CREATE, AuditEntityType.TRANSACTION, transaction.getId(), null,
+                TransactionSnapshot.of(transaction));
         return mapper.toResponse(transaction, reference.category(), reference.account());
     }
 
@@ -74,8 +81,11 @@ public class TransactionService {
             throw new ConflictException("Esta movimentação foi alterada em outro lugar. Recarregue e tente novamente.");
         }
         Reference reference = resolve(request, userId, transaction);
+        TransactionSnapshot before = TransactionSnapshot.of(transaction);
         transaction.update(details(request));
         repository.flush();
+        audit.record(userId, AuditAction.UPDATE, AuditEntityType.TRANSACTION, id, before,
+                TransactionSnapshot.of(transaction));
         return mapper.toResponse(transaction, reference.category(), reference.account());
     }
 
@@ -85,14 +95,19 @@ public class TransactionService {
         if (transaction.getStatus() == TransactionStatus.CANCELED) {
             throw new BusinessRuleException("Uma movimentação cancelada não pode ser efetivada.");
         }
+        TransactionSnapshot before = TransactionSnapshot.of(transaction);
         transaction.complete();
         repository.flush();
+        audit.record(userId, AuditAction.UPDATE, AuditEntityType.TRANSACTION, id, before,
+                TransactionSnapshot.of(transaction));
         return toResponse(transaction);
     }
 
     @Transactional
     public void delete(UUID id, UUID userId) {
-        repository.delete(findEditable(id, userId));
+        Transaction transaction = findEditable(id, userId);
+        repository.delete(transaction);
+        audit.record(userId, AuditAction.DELETE, AuditEntityType.TRANSACTION, id, TransactionSnapshot.of(transaction), null);
     }
 
     private record Reference(Category category, Account account) {

@@ -1,5 +1,8 @@
 package com.finantrack.goal.service;
 
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.common.dto.PageResponse;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.ConflictException;
@@ -21,6 +24,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,9 +43,11 @@ public class GoalService {
     private final GoalMovementRepository movements;
     private final GoalMapper mapper;
     private final Clock clock;
+    private final AuditRecorder audit;
 
     public GoalService(FinancialGoalRepository goals, GoalMovementRepository movements, GoalMapper mapper,
-            Clock clock) {
+            Clock clock, AuditRecorder audit) {
+        this.audit = audit;
         this.goals = goals;
         this.movements = movements;
         this.mapper = mapper;
@@ -136,8 +142,11 @@ public class GoalService {
     }
 
     private GoalResponse record(FinancialGoal goal, GoalMovementType type, GoalMovementRequest request) {
-        movements.save(new GoalMovement(goal.getId(), type, request.amount(), request.note(), clock.instant()));
+        GoalMovement movement = movements.save(
+                new GoalMovement(goal.getId(), type, request.amount(), request.note(), clock.instant()));
         goals.flush();
+        audit.record(goal.getUserId(), AuditAction.CREATE, AuditEntityType.GOAL_MOVEMENT, movement.getId(), null,
+                Map.of("goalId", goal.getId(), "type", type, "amount", request.amount()));
         return toResponse(goal);
     }
 

@@ -22,7 +22,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
 | 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 5: Transversais, próximo item 6.22) |
+| 6 | Recursos financeiros | Em andamento (bloco 5: Transversais, próximo item 6.23) |
 | 7 | Relatórios e Configurações | Não iniciada |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
@@ -283,7 +283,7 @@ Saída: documentos em `docs/`.
 **Transversais (acréscimo)**
 
 - [x] 6.21 Central de notificações, ligada à `MudAppBar`.
-- [ ] 6.22 Auditoria das alterações relevantes (D9).
+- [x] 6.22 Auditoria das alterações relevantes (D9).
 - [ ] 6.23 Campo de pesquisa global da barra superior.
 - [ ] 6.24 Concluir o Dashboard: metas, próximos vencimentos e alertas de orçamento.
 

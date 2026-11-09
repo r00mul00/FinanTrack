@@ -2,6 +2,9 @@ package com.finantrack.card.service;
 
 import com.finantrack.account.entity.Account;
 import com.finantrack.account.repository.AccountRepository;
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.card.dto.InvoiceDetailResponse;
 import com.finantrack.card.dto.InvoiceResponse;
 import com.finantrack.card.dto.PaymentRequest;
@@ -35,10 +38,12 @@ public class InvoiceService {
     private final TransactionRepository transactions;
     private final CardLimitCalculator limits;
     private final Clock clock;
+    private final AuditRecorder audit;
 
     public InvoiceService(CreditCardRepository cards, CreditCardInvoiceRepository invoices,
             CreditCardInstallmentRepository installments, AccountRepository accounts,
-            TransactionRepository transactions, CardLimitCalculator limits, Clock clock) {
+            TransactionRepository transactions, CardLimitCalculator limits, Clock clock, AuditRecorder audit) {
+        this.audit = audit;
         this.cards = cards;
         this.invoices = invoices;
         this.installments = installments;
@@ -87,9 +92,12 @@ public class InvoiceService {
         }
 
         invoice.registerPayment(request.amount());
-        transactions.save(Transaction.invoicePayment(userId, description(card, invoice), request.amount(),
-                account.getId(), invoice.getId(), request.paymentDate()));
+        Transaction payment = transactions.save(Transaction.invoicePayment(userId, description(card, invoice),
+                request.amount(), account.getId(), invoice.getId(), request.paymentDate()));
         transactions.flush();
+        audit.record(userId, AuditAction.CREATE, AuditEntityType.INVOICE_PAYMENT, payment.getId(), null,
+                Map.of("cardId", card.getId(), "invoiceId", invoice.getId(), "accountId", account.getId(),
+                        "amount", request.amount(), "paymentDate", request.paymentDate()));
 
         if (request.amount().compareTo(remaining) == 0) {
             transactions.completeInstallmentsOfInvoice(invoice.getId(), clock.instant());

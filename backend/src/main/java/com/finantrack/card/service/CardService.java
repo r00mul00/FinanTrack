@@ -1,5 +1,8 @@
 package com.finantrack.card.service;
 
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.card.dto.CardRequest;
 import com.finantrack.card.dto.CardResponse;
 import com.finantrack.card.entity.CreditCard;
@@ -20,11 +23,14 @@ public class CardService {
     private final CreditCardRepository cards;
     private final CreditCardPurchaseRepository purchases;
     private final CardLimitCalculator limits;
+    private final AuditRecorder audit;
 
-    public CardService(CreditCardRepository cards, CreditCardPurchaseRepository purchases, CardLimitCalculator limits) {
+    public CardService(CreditCardRepository cards, CreditCardPurchaseRepository purchases, CardLimitCalculator limits,
+            AuditRecorder audit) {
         this.cards = cards;
         this.purchases = purchases;
         this.limits = limits;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -53,9 +59,14 @@ public class CardService {
     @Transactional
     public CardResponse update(UUID id, CardRequest request, UUID userId) {
         CreditCard card = cards.findForUpdate(id, userId).orElseThrow(this::notFound);
+        BigDecimal previousLimit = card.getCreditLimit();
         card.update(request.nickname(), request.brand(), request.lastFour(), request.creditLimit(),
                 request.closingDay(), request.dueDay(), request.archived());
         cards.flush();
+        if (previousLimit.compareTo(request.creditLimit()) != 0) {
+            audit.record(userId, AuditAction.LIMIT_CHANGE, AuditEntityType.CARD, id,
+                    Map.of("creditLimit", previousLimit), Map.of("creditLimit", request.creditLimit()));
+        }
         return toResponse(card, limits.usedByCard(card.getId()));
     }
 

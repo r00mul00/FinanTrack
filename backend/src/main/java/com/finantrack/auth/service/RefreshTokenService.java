@@ -1,5 +1,8 @@
 package com.finantrack.auth.service;
 
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.auth.dto.AuthSession;
 import com.finantrack.auth.entity.RefreshToken;
 import com.finantrack.auth.repository.RefreshTokenRepository;
@@ -26,9 +29,11 @@ public class RefreshTokenService {
     private final Clock clock;
     private final Duration ttl;
     private final Duration reuseGrace;
+    private final AuditRecorder audit;
 
     public RefreshTokenService(RefreshTokenRepository repository, AccessTokenService accessTokenService,
-            Clock clock, FinanTrackProperties properties) {
+            Clock clock, FinanTrackProperties properties, AuditRecorder audit) {
+        this.audit = audit;
         this.repository = repository;
         this.accessTokenService = accessTokenService;
         this.clock = clock;
@@ -39,6 +44,7 @@ public class RefreshTokenService {
     /** Inicia uma sessão: nova família de tokens. */
     @Transactional
     public AuthSession startSession(User user, String userAgent) {
+        audit.record(user.getId(), AuditAction.LOGIN, AuditEntityType.USER, user.getId());
         return new AuthSession(accessTokenService.issue(user), store(user, UUID.randomUUID(), userAgent));
     }
 
@@ -63,6 +69,8 @@ public class RefreshTokenService {
                 throw new ConflictException("A sessão acabou de ser renovada. Tente novamente.");
             }
             repository.revokeFamily(current.getFamilyId(), now);
+            UUID ownerId = current.getUser().getId();
+            audit.record(ownerId, AuditAction.REFRESH_TOKEN_REUSE, AuditEntityType.USER, ownerId);
             throw new InvalidRefreshTokenException();
         }
         if (!current.getExpiresAt().isAfter(now)) {
@@ -80,8 +88,11 @@ public class RefreshTokenService {
         if (rawToken == null || rawToken.isBlank()) {
             return;
         }
-        repository.findByTokenHash(OpaqueTokens.sha256(rawToken))
-                .ifPresent(token -> repository.revokeFamily(token.getFamilyId(), clock.instant()));
+        repository.findByTokenHash(OpaqueTokens.sha256(rawToken)).ifPresent(token -> {
+            repository.revokeFamily(token.getFamilyId(), clock.instant());
+            UUID ownerId = token.getUser().getId();
+            audit.record(ownerId, AuditAction.LOGOUT, AuditEntityType.USER, ownerId);
+        });
     }
 
     /** Encerra todas as sessões do usuário, por exemplo ao redefinir a senha. */

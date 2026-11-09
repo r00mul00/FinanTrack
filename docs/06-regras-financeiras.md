@@ -174,6 +174,12 @@ Exclusão de categoria em uso exige `reassignTo`, com categoria de mesmo tipo, e
 
 Registrar criação, alteração e exclusão de transações, compras, pagamentos, movimentações de metas e alterações de limite, além de eventos de segurança. Nunca gravar senhas ou tokens.
 
+- O registro entra na transação da própria alteração: se ela for desfeita, o registro também é.
+- `changes` guarda os valores `before` e `after` dos campos auditados. Observações e notas, por serem texto livre, ficam de fora.
+- Eventos de segurança: login realizado, logout, redefinição de senha e reutilização de refresh token.
+- **Login recusado não é auditado:** a escrita extra só para e-mails existentes criaria diferença no tempo de resposta e ajudaria a descobrir quais estão cadastrados.
+- Lançamentos gerados por recorrência são auditados como criação de transação. As parcelas de cartão são cobertas pelo registro da compra.
+
 ## Fora do escopo inicial
 
 Transferência entre contas; conversão entre moedas (a moeda escolhida altera apenas a exibição); estorno parcial de compras; juros de fatura em atraso.

@@ -1,5 +1,8 @@
 package com.finantrack.card.service;
 
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.card.dto.PurchaseRequest;
 import com.finantrack.card.dto.PurchaseResponse;
 import com.finantrack.card.entity.CreditCard;
@@ -23,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,11 +47,13 @@ public class PurchaseService {
     private final TransactionRepository transactions;
     private final CardLimitCalculator limits;
     private final Clock clock;
+    private final AuditRecorder audit;
 
     public PurchaseService(CreditCardRepository cards, CreditCardPurchaseRepository purchases,
             CreditCardInvoiceRepository invoices, CreditCardInstallmentRepository installments,
             CategoryRepository categories, TransactionRepository transactions, CardLimitCalculator limits,
-            Clock clock) {
+            Clock clock, AuditRecorder audit) {
+        this.audit = audit;
         this.cards = cards;
         this.purchases = purchases;
         this.invoices = invoices;
@@ -103,6 +109,7 @@ public class PurchaseService {
                     amounts.get(i)));
         }
         transactions.flush();
+        audit.record(userId, AuditAction.CREATE, AuditEntityType.CARD_PURCHASE, purchase.getId(), null, snapshot(purchase));
         return toResponse(purchase);
     }
 
@@ -127,6 +134,13 @@ public class PurchaseService {
         purchase.cancel(clock.instant());
         purchases.flush();
         transactions.cancelInstallmentsOfPurchase(purchaseId, clock.instant());
+        audit.record(userId, AuditAction.CANCEL, AuditEntityType.CARD_PURCHASE, purchaseId, snapshot(purchase), null);
+    }
+
+    private Map<String, Object> snapshot(CreditCardPurchase purchase) {
+        return Map.of("cardId", purchase.getCardId(), "description", purchase.getDescription(),
+                "totalAmount", purchase.getTotalAmount(), "installments", purchase.getInstallmentsCount(),
+                "categoryId", purchase.getCategoryId(), "purchaseDate", purchase.getPurchaseDate());
     }
 
     private CreditCardInvoice invoiceFor(CreditCard card, YearMonth month) {

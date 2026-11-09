@@ -1,5 +1,8 @@
 package com.finantrack.auth.service;
 
+import com.finantrack.audit.entity.AuditAction;
+import com.finantrack.audit.entity.AuditEntityType;
+import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.auth.entity.UserTokenType;
 import com.finantrack.common.config.FinanTrackProperties;
 import com.finantrack.user.entity.User;
@@ -17,10 +20,12 @@ public class PasswordResetService {
     private final EmailSender emailSender;
     private final PasswordEncoder passwordEncoder;
     private final FinanTrackProperties properties;
+    private final AuditRecorder audit;
 
     public PasswordResetService(UserRepository userRepository, UserTokenService userTokenService,
             RefreshTokenService refreshTokenService, EmailSender emailSender, PasswordEncoder passwordEncoder,
-            FinanTrackProperties properties) {
+            FinanTrackProperties properties, AuditRecorder audit) {
+        this.audit = audit;
         this.userRepository = userRepository;
         this.userTokenService = userTokenService;
         this.refreshTokenService = refreshTokenService;
@@ -40,6 +45,7 @@ public class PasswordResetService {
         User user = userTokenService.consume(rawToken, UserTokenType.PASSWORD_RESET);
         user.changePassword(passwordEncoder.encode(newPassword));
         refreshTokenService.revokeAllSessions(user.getId());
+        audit.record(user.getId(), AuditAction.PASSWORD_RESET, AuditEntityType.USER, user.getId());
     }
 
     private void sendTo(User user) {
