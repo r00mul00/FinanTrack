@@ -162,6 +162,53 @@ class AuthIntegrationTest {
     }
 
     @Test
+    void wellFormedTokenOfActiveUserIsAccepted() throws Exception {
+        Instant now = Instant.now();
+        String token = encode(jwtEncoder, JwtConfig.ISSUER, now, now.plusSeconds(900));
+
+        mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void validTokenOfDeletedUserIsRejected() throws Exception {
+        Instant now = Instant.now();
+        String token = encode(jwtEncoder, JwtConfig.ISSUER, now, now.plusSeconds(900), UUID.randomUUID());
+
+        mockMvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/goals").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"X\",\"targetAmount\":10,\"initialAmount\":0,\"deadline\":\"2099-01-01\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void validTokenIsRejectedOnceDeletionIsRequested() throws Exception {
+        Instant now = Instant.now();
+        String token = encode(jwtEncoder, JwtConfig.ISSUER, now, now.plusSeconds(900));
+        mockMvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.update("update users set deletion_requested_at = now() where email = ?", EMAIL);
+
+        mockMvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void tokenWithNonUuidSubjectIsRejected() throws Exception {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(JwtConfig.ISSUER).subject("admin").issuedAt(now).expiresAt(now.plusSeconds(900)).build();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                .getTokenValue();
+
+        mockMvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void protectedRouteRejectsExpiredToken() throws Exception {
         Instant past = Instant.now().minusSeconds(3600);
         String token = encode(jwtEncoder, JwtConfig.ISSUER, past.minusSeconds(900), past);
@@ -191,10 +238,18 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    /** Usa um usuário existente: a recusa precisa vir da verificação testada, não do usuário. */
     private String encode(JwtEncoder encoder, String issuer, Instant issuedAt, Instant expiresAt) {
+        UUID subject = userRepository.findByEmail(EMAIL)
+                .orElseGet(() -> userRepository.save(new User("Ana", EMAIL, "hash")))
+                .getId();
+        return encode(encoder, issuer, issuedAt, expiresAt, subject);
+    }
+
+    private String encode(JwtEncoder encoder, String issuer, Instant issuedAt, Instant expiresAt, UUID subject) {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
-                .subject(UUID.randomUUID().toString())
+                .subject(subject.toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
                 .build();

@@ -13,6 +13,7 @@ import com.finantrack.category.repository.CategoryRepository;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.ResourceNotFoundException;
+import com.finantrack.common.exception.UniqueConstraints;
 import com.finantrack.transaction.repository.TransactionRepository;
 import com.finantrack.transaction.repository.TransactionRepository.CategoryTotal;
 import java.math.BigDecimal;
@@ -130,7 +131,10 @@ public class BudgetService {
         try {
             return repository.saveAndFlush(budget);
         } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(DUPLICATE);
+            if (UniqueConstraints.isViolated(ex)) {
+                throw new ConflictException(DUPLICATE);
+            }
+            throw ex;
         }
     }
 }

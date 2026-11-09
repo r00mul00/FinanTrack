@@ -31,12 +31,15 @@ sequenceDiagram
     A-->>F: Access token + Set-Cookie
     F->>F: Guarda o access token em memória
     F->>A: GET /transactions (Bearer)
-    A->>A: Valida JWT e obtém o userId
+    A->>A: Valida assinatura, prazo e emissor do JWT
+    A->>D: Confere se o usuário existe e não pediu exclusão
     A->>D: Consulta filtrando por user_id
     A-->>F: Dados somente do usuário
 ```
 
 Login sem e-mail validado responde 403 com o código `EMAIL_NOT_VERIFIED`.
+
+O access token de quem excluiu a conta ou pediu a exclusão é recusado com 401, sem esperar os 15 minutos de validade (`ActiveUserValidator`). A conferência só é feita depois que assinatura, prazo e emissor são aprovados, e custa uma consulta por chave primária a cada requisição.
 
 ## Renovação com rotação
 

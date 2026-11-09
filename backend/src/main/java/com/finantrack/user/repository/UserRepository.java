@@ -18,6 +18,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
+    /** Usuário que ainda pode usar a API: existe e não pediu a exclusão da conta. */
+    boolean existsByIdAndDeletionRequestedAtIsNull(UUID id);
+
     @Modifying
     @Query("""
             update User u

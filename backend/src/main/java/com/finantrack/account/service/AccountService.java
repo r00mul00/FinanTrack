@@ -7,6 +7,7 @@ import com.finantrack.account.mapper.AccountMapper;
 import com.finantrack.account.repository.AccountRepository;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.ResourceNotFoundException;
+import com.finantrack.common.exception.UniqueConstraints;
 import com.finantrack.recurring.repository.RecurringTransactionRepository;
 import com.finantrack.transaction.repository.TransactionRepository;
 import java.math.BigDecimal;
@@ -101,7 +102,10 @@ public class AccountService {
         try {
             return repository.saveAndFlush(account);
         } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(DUPLICATE_NAME);
+            if (UniqueConstraints.isViolated(ex)) {
+                throw new ConflictException(DUPLICATE_NAME);
+            }
+            throw ex;
         }
     }
 }

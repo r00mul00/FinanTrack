@@ -24,7 +24,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 5 | Dashboard | Concluída |
 | 6 | Recursos financeiros | Concluída |
 | 7 | Relatórios e Configurações | Concluída |
-| 8 | Qualidade | Não iniciada |
+| 8 | Qualidade | Em andamento |
 | 9 | Deploy | Não iniciada |
 | 10 | Portfólio | Não iniciada |
 
@@ -315,10 +315,10 @@ Saída: documentos em `docs/`.
 
 ## Fase 8 — Qualidade
 
-- [ ] 8.1 Completar os testes: autenticação, cadastro, transações, saldo, categorias, orçamentos, metas, cartões, parcelamento, isolamento de dados e tratamento de erros.
+- [x] 8.1 Completar os testes: autenticação, cadastro, transações, saldo, categorias, orçamentos, metas, cartões, parcelamento, isolamento de dados e tratamento de erros.
 - [ ] 8.2 Testar integração com PostgreSQL real, por exemplo com Testcontainers (acréscimo).
 - [ ] 8.3 Revisar a segurança pela checklist de referência.
-- [ ] 8.4 Revisar autorização por usuário em todos os endpoints.
+- [x] 8.4 Revisar autorização por usuário em todos os endpoints.
 - [ ] 8.5 Analisar performance: consultas N+1, índices e paginação.
 - [ ] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
 - [ ] 8.7 Refatorar.
