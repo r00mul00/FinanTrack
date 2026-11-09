@@ -21,9 +21,9 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 2 | Configuração | Concluída (teste do Compose depende do item 0.3b) |
 | 3 | Autenticação | Concluída |
 | 4 | Transações | Concluída |
-| 5 | Dashboard | Concluída (metas, vencimentos e alertas no item 6.24) |
-| 6 | Recursos financeiros | Em andamento (bloco 5: Transversais, próximo item 6.24) |
-| 7 | Relatórios e Configurações | Não iniciada |
+| 5 | Dashboard | Concluída |
+| 6 | Recursos financeiros | Concluída |
+| 7 | Relatórios e Configurações | Em andamento (bloco 1: Relatórios) |
 | 8 | Qualidade | Não iniciada |
 | 9 | Deploy | Não iniciada |
 | 10 | Portfólio | Não iniciada |
@@ -285,7 +285,7 @@ Saída: documentos em `docs/`.
 - [x] 6.21 Central de notificações, ligada à `MudAppBar`.
 - [x] 6.22 Auditoria das alterações relevantes (D9).
 - [x] 6.23 Campo de pesquisa global da barra superior.
-- [ ] 6.24 Concluir o Dashboard: metas, próximos vencimentos e alertas de orçamento.
+- [x] 6.24 Concluir o Dashboard: metas, próximos vencimentos e alertas de orçamento.
 
 **Portão de validação:** cada bloco testado e aprovado, com as regras de negócio cobertas por testes automatizados.
 

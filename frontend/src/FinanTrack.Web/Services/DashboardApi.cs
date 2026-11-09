@@ -18,13 +18,18 @@ public sealed class DashboardApi(IHttpClientFactory httpClientFactory)
     public Task<List<CategoryExpenseResponse>?> GetExpensesByCategoryAsync(DateOnly from, DateOnly to) =>
         GetAsync<List<CategoryExpenseResponse>>("expenses-by-category", from, to);
 
+    public Task<List<UpcomingDueResponse>?> GetUpcomingAsync() => GetAsync<List<UpcomingDueResponse>>("upcoming");
+
+    private Task<T?> GetAsync<T>(string resource, DateOnly from, DateOnly to) where T : class =>
+        GetAsync<T>($"{resource}?from={Iso(from)}&to={Iso(to)}");
+
     /// <summary>Retorna null se os dados não puderem ser carregados.</summary>
-    private async Task<T?> GetAsync<T>(string resource, DateOnly from, DateOnly to) where T : class
+    private async Task<T?> GetAsync<T>(string resource) where T : class
     {
         try
         {
             var http = httpClientFactory.CreateClient(HttpClients.Api);
-            var response = await http.GetAsync($"{Path}/{resource}?from={Iso(from)}&to={Iso(to)}");
+            var response = await http.GetAsync($"{Path}/{resource}");
             return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<T>() : null;
         }
         catch (HttpRequestException)

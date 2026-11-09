@@ -1,0 +1,47 @@
+<MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+    <div class="d-flex justify-space-between align-center mb-3">
+        <MudText Typo="Typo.subtitle1">Metas</MudText>
+        <MudLink Href="/metas" Typo="Typo.body2">Ver todas</MudLink>
+    </div>
+
+    @if (Goals is null)
+    {
+        @for (var i = 0; i < 3; i++)
+        {
+            <MudSkeleton Height="52px" />
+        }
+    }
+    else if (Active.Count == 0)
+    {
+        <div class="ft-chart-empty small">Nenhuma meta em andamento.</div>
+    }
+    else
+    {
+        @foreach (var goal in Active)
+        {
+            <div class="mb-3">
+                <div class="d-flex justify-space-between gap-2">
+                    <MudText Typo="Typo.body2" Class="ft-ellipsis">@goal.Name</MudText>
+                    <MudText Typo="Typo.body2">@goal.Progress.ToString("0.##")%</MudText>
+                </div>
+                <MudProgressLinear Class="my-1" Rounded="true" Size="Size.Small" Color="Color.Primary" Value="@((double)goal.Progress)"
+                                   aria-label="@($"Progresso da meta {goal.Name}")" />
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    @Money.Format(goal.CurrentAmount) de @Money.Format(goal.TargetAmount)
+                </MudText>
+            </div>
+        }
+    }
+</MudPaper>
+
+@code {
+    private const int MaxItems = 4;
+
+    [Parameter] public IReadOnlyList<GoalResponse>? Goals { get; set; }
+
+    private List<GoalResponse> Active => (Goals ?? [])
+        .Where(goal => goal.Status == GoalStatus.ACTIVE)
+        .OrderBy(goal => goal.Deadline)
+        .Take(MaxItems)
+        .ToList();
+}

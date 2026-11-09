@@ -142,6 +142,10 @@ Compra só pode ser cancelada se nenhuma parcela estiver em fatura com pagamento
 - Ao criar ou reativar, os ciclos já devidos são gerados na hora; o job também roda ao iniciar a aplicação, para recuperar ciclos perdidos.
 - Excluir a recorrência mantém os lançamentos já gerados, sem o vínculo.
 
+## Próximos vencimentos (Dashboard)
+
+Despesas comuns `PENDING` e faturas com valor em aberto que vencem até 30 dias a partir de hoje, incluindo as já vencidas, em ordem de vencimento e limitadas a 8 itens. A lista, as metas e os alertas de orçamento refletem o momento atual e não usam o período selecionado.
+
 ## Notificações
 
 Job diário (02:30, `America/Sao_Paulo`, depois das recorrências) que também roda ao iniciar a aplicação. Um aviso por evento, garantido pelo índice único `(user_id, dedupe_key)`.

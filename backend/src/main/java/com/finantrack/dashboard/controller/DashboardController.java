@@ -4,7 +4,9 @@ import com.finantrack.common.security.CurrentUser;
 import com.finantrack.dashboard.dto.CategoryExpenseResponse;
 import com.finantrack.dashboard.dto.DashboardSummaryResponse;
 import com.finantrack.dashboard.dto.IncomeVsExpenseResponse;
+import com.finantrack.dashboard.dto.UpcomingDueResponse;
 import com.finantrack.dashboard.service.DashboardService;
+import com.finantrack.dashboard.service.UpcomingDueService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,9 +25,18 @@ public class DashboardController {
     private final DashboardService service;
     private final CurrentUser currentUser;
 
-    public DashboardController(DashboardService service, CurrentUser currentUser) {
+    private final UpcomingDueService upcomingDue;
+
+    public DashboardController(DashboardService service, CurrentUser currentUser, UpcomingDueService upcomingDue) {
         this.service = service;
         this.currentUser = currentUser;
+        this.upcomingDue = upcomingDue;
+    }
+
+    /** Relativo a hoje: não usa o período selecionado. */
+    @GetMapping("/upcoming")
+    public List<UpcomingDueResponse> upcoming() {
+        return upcomingDue.upcoming(currentUser.id());
     }
 
     @GetMapping("/summary")

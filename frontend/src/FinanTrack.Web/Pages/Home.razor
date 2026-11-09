@@ -1,8 +1,11 @@
 ﻿@page "/"
+@using System.Globalization
 @using FinanTrack.Web.Components.Dashboard
 @using Microsoft.AspNetCore.Components.Sections
 @inject DashboardApi Dashboard
 @inject TransactionApi Transactions
+@inject BudgetApi BudgetsApi
+@inject GoalApi GoalsApi
 @inject UserApi Users
 @inject PeriodState Period
 @implements IDisposable
@@ -51,8 +54,18 @@
         <CategoryDonut Data="_categories" />
     </MudItem>
 
-    <MudItem xs="12">
+    <MudItem xs="12" lg="8">
         <RecentTransactions Items="_recent" />
+    </MudItem>
+    <MudItem xs="12" lg="4">
+        <UpcomingDues Items="_upcoming" />
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <GoalsOverview Goals="_goals" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <BudgetAlerts Budgets="_budgets" />
     </MudItem>
 </MudGrid>
 
@@ -64,6 +77,9 @@
     private IncomeVsExpenseResponse? _series;
     private List<CategoryExpenseResponse>? _categories;
     private List<TransactionResponse>? _recent;
+    private List<UpcomingDueResponse>? _upcoming;
+    private List<GoalResponse>? _goals;
+    private List<BudgetResponse>? _budgets;
     private bool _loadFailed;
     private int _loadId;
 
@@ -84,6 +100,9 @@
         _series = null;
         _categories = null;
         _recent = null;
+        _upcoming = null;
+        _goals = null;
+        _budgets = null;
         StateHasChanged();
 
         var (from, to) = (Period.From, Period.To);
@@ -92,7 +111,11 @@
         var series = Dashboard.GetIncomeVsExpenseAsync(from, to);
         var categories = Dashboard.GetExpensesByCategoryAsync(from, to);
         var recent = Transactions.ListAsync(filter, 0, RecentCount, null);
-        await Task.WhenAll(summary, series, categories, recent);
+        // Vencimentos, metas e alertas refletem o momento atual, não o período selecionado.
+        var upcoming = Dashboard.GetUpcomingAsync();
+        var goals = GoalsApi.ListAsync();
+        var budgets = BudgetsApi.GetMonthAsync(DateTime.Today.ToString("yyyy-MM", CultureInfo.InvariantCulture));
+        await Task.WhenAll(summary, series, categories, recent, upcoming, goals, budgets);
 
         // Se o período mudou durante a consulta, só a resposta mais nova é exibida.
         if (loadId != _loadId)
@@ -104,7 +127,11 @@
         _series = series.Result;
         _categories = categories.Result;
         _recent = recent.Result?.Content;
-        _loadFailed = _summary is null || _series is null || _categories is null || _recent is null;
+        _upcoming = upcoming.Result;
+        _goals = goals.Result;
+        _budgets = budgets.Result?.Items;
+        _loadFailed = _summary is null || _series is null || _categories is null || _recent is null
+            || _upcoming is null || _goals is null || _budgets is null;
         StateHasChanged();
     }
 

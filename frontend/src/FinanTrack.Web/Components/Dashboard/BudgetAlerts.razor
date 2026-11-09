@@ -1,0 +1,48 @@
+<MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+    <div class="d-flex justify-space-between align-center mb-3">
+        <MudText Typo="Typo.subtitle1">Alertas de orçamento</MudText>
+        <MudLink Href="/orcamentos" Typo="Typo.body2">Ver todos</MudLink>
+    </div>
+
+    @if (Budgets is null)
+    {
+        @for (var i = 0; i < 3; i++)
+        {
+            <MudSkeleton Height="52px" />
+        }
+    }
+    else if (Alerts.Count == 0)
+    {
+        <div class="ft-chart-empty small">Nenhum orçamento em alerta neste mês.</div>
+    }
+    else
+    {
+        @foreach (var budget in Alerts)
+        {
+            <div class="mb-3">
+                <div class="d-flex justify-space-between gap-2">
+                    <MudText Typo="Typo.body2" Class="ft-ellipsis">@budget.CategoryName</MudText>
+                    <MudText Typo="Typo.body2" Color="@budget.State.Color()">@budget.Percentage.ToString("0.##")%</MudText>
+                </div>
+                <MudProgressLinear Class="my-1" Rounded="true" Size="Size.Small" Color="@budget.State.Color()"
+                                   Value="@((double)Math.Min(budget.Percentage, 100))"
+                                   aria-label="@($"Consumo do orçamento de {budget.CategoryName}")" />
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    @Money.Format(budget.UsedAmount) de @Money.Format(budget.LimitAmount)
+                </MudText>
+            </div>
+        }
+    }
+</MudPaper>
+
+@code {
+    private const int MaxItems = 4;
+
+    [Parameter] public IReadOnlyList<BudgetResponse>? Budgets { get; set; }
+
+    private List<BudgetResponse> Alerts => (Budgets ?? [])
+        .Where(budget => budget.State != BudgetState.NORMAL)
+        .OrderByDescending(budget => budget.Percentage)
+        .Take(MaxItems)
+        .ToList();
+}

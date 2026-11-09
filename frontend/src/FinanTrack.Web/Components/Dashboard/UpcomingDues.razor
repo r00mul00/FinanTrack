@@ -1,0 +1,39 @@
+@using System.Globalization
+
+<MudPaper Elevation="0" Class="ft-card pa-5" Style="height: 100%;">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Próximos vencimentos</MudText>
+
+    @if (Items is null)
+    {
+        @for (var i = 0; i < 3; i++)
+        {
+            <MudSkeleton Height="52px" />
+        }
+    }
+    else if (Items.Count == 0)
+    {
+        <div class="ft-chart-empty small">Nenhum vencimento nos próximos 30 dias.</div>
+    }
+    else
+    {
+        @foreach (var item in Items)
+        {
+            <div class="ft-recent-row">
+                <div class="ft-category-name">
+                    <MudLink Href="@RouteOf(item)" Typo="Typo.body2" Color="Color.Inherit" Class="ft-ellipsis">@item.Description</MudLink>
+                    <MudText Typo="Typo.caption" Color="@(item.Overdue ? Color.Error : Color.Default)">
+                        @(item.Overdue ? "Venceu em" : "Vence em") @item.DueDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                    </MudText>
+                </div>
+                <span class="ft-amount-expense">@Money.Format(item.Amount)</span>
+            </div>
+        }
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public IReadOnlyList<UpcomingDueResponse>? Items { get; set; }
+
+    private static string RouteOf(UpcomingDueResponse item) =>
+        item.CardId is null ? "/transacoes" : $"/cartoes/{item.CardId}";
+}

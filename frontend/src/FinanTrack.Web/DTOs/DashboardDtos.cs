@@ -16,6 +16,15 @@ public sealed record DashboardSummaryResponse(
     decimal? ExpensesChange,
     decimal? ResultChange);
 
+public sealed record UpcomingDueResponse(
+    string Type,
+    Guid Id,
+    Guid? CardId,
+    string Description,
+    decimal Amount,
+    DateOnly DueDate,
+    bool Overdue);
+
 public sealed record SeriesPoint(DateOnly Date, decimal Income, decimal Expenses);
 
 public sealed record IncomeVsExpenseResponse(string Granularity, List<SeriesPoint> Points);

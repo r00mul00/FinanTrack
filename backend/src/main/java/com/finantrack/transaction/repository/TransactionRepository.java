@@ -1,6 +1,9 @@
 package com.finantrack.transaction.repository;
 
 import com.finantrack.transaction.entity.Transaction;
+import com.finantrack.transaction.entity.TransactionKind;
+import com.finantrack.transaction.entity.TransactionStatus;
+import com.finantrack.transaction.entity.TransactionType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -121,6 +124,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     List<Transaction> findPendingExpensesDueBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     List<Transaction> findTop5ByUserIdAndDescriptionContainingIgnoreCaseOrderByTransactionDateDesc(UUID userId, String term);
+
+    List<Transaction> findTop8ByUserIdAndStatusAndKindAndTypeAndDueDateLessThanEqualOrderByDueDateAsc(UUID userId,
+            TransactionStatus status, TransactionKind kind, TransactionType type, LocalDate limit);
 
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
