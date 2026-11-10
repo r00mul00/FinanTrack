@@ -485,6 +485,65 @@ input:-webkit-autofill:active {
     background-color: transparent;
 }
 
+/*
+ * Em telas estreitas a tabela vira lista empilhada: rótulo à esquerda, valor à direita.
+ * Textos longos quebram linha em vez de empurrar o valor para fora, e vários botões de
+ * ação ficam juntos à direita. As classes mud-xs-table/mud-sm-table existem em qualquer
+ * largura; os limites abaixo são os do MudBlazor.
+ */
+@media (max-width: 600px) {
+    .mud-xs-table .mud-table-cell {
+        justify-content: flex-end;
+        gap: 4px 16px;
+    }
+
+    .mud-xs-table .mud-table-cell::before {
+        margin-right: auto;
+    }
+
+    .mud-xs-table .mud-table-cell > * {
+        min-width: 0;
+        text-align: end;
+    }
+}
+
+@media (max-width: 960px) {
+    .mud-sm-table .mud-table-cell {
+        justify-content: flex-end;
+        gap: 4px 16px;
+    }
+
+    .mud-sm-table .mud-table-cell::before {
+        margin-right: auto;
+    }
+
+    .mud-sm-table .mud-table-cell > * {
+        min-width: 0;
+        text-align: end;
+    }
+}
+
+/* Relatórios rolam para o lado em telas estreitas; datas e valores não quebram linha. */
+.ft-report-table .mud-table-cell {
+    white-space: nowrap;
+}
+
+/*
+ * Formulários em diálogo ocupam a tela inteira no smartphone (as mesmas regras do
+ * mud-dialog-fullscreen); confirmações (message box) continuam como janela.
+ */
+@media (max-width: 600px) {
+    .mud-dialog.mud-dialog-width-full:not(.mud-message-box) {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        max-width: 100%;
+        max-height: none;
+        border-radius: 0;
+        overflow-y: hidden;
+    }
+}
+
 /* Barra superior */
 .ft-avatar-button {
     display: flex;

@@ -9,7 +9,8 @@
 <AuthorizeView>
     <Authorized Context="authState">
         <MudLayout>
-            <MudAppBar Elevation="0" Color="Color.Transparent">
+            @* Opaca (AppbarBackground = fundo da página): o conteúdo rolado não aparece atrás dos botões. *@
+            <MudAppBar Elevation="0">
                 <MudIconButton Icon="@Icons.Material.Rounded.Menu"
                                Color="Color.Inherit"
                                Edge="Edge.Start"

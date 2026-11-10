@@ -104,7 +104,8 @@
 
 <MudPaper Elevation="0" Class="ft-card pa-2">
     <MudDataGrid @ref="_grid" T="TransactionResponse" ServerData="LoadServerData" Elevation="0" Hover="true"
-                 HorizontalScrollbar="true" Class="ft-grid" RowsPerPage="20" SortMode="SortMode.Single">
+                 Class="ft-grid" RowsPerPage="20" SortMode="SortMode.Single"
+                 Breakpoint="Breakpoint.Sm">
         <Columns>
             <PropertyColumn Property="x => x.TransactionDate" Title="Data">
                 <CellTemplate>@FormatDate(context.Item.TransactionDate)</CellTemplate>

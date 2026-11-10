@@ -322,7 +322,7 @@ Saída: documentos em `docs/`.
 - [x] 8.5 Analisar performance: consultas N+1, índices e paginação.
 - [x] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
 - [x] 8.7 Refatorar.
-- [ ] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
+- [x] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
 - [ ] 8.9 Verificar hover, focus, disabled, loading e feedback visual.
 
 **Portão de validação:** CI verde e checklists de segurança e responsividade concluídas.
