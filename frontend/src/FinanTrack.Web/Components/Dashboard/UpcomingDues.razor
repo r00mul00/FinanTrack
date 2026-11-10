@@ -35,5 +35,5 @@
     [Parameter] public IReadOnlyList<UpcomingDueResponse>? Items { get; set; }
 
     private static string RouteOf(UpcomingDueResponse item) =>
-        item.CardId is null ? "/transacoes" : $"/cartoes/{item.CardId}";
+        item.CardId is null ? "transacoes" : $"cartoes/{item.CardId}";
 }

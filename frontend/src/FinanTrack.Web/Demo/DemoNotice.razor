@@ -1,0 +1,36 @@
+@using FinanTrack.Web.Demo
+@inject IServiceProvider Services
+@inject NavigationManager Navigation
+
+@* Só existe no build do GitHub Pages: fora do modo demonstração, o DemoStore não é registrado. *@
+@if (_store is not null)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="@Class" ContentAlignment="HorizontalAlignment.Left">
+        @if (OnLoginPage)
+        {
+            <span><strong>Demonstração:</strong> entre com qualquer e-mail e senha.</span>
+        }
+        else
+        {
+            <span>
+                <strong>Demonstração:</strong> os dados são fictícios e ficam só neste navegador.
+                <MudLink Typo="Typo.body2" Class="ml-1" OnClick="Reset">Restaurar dados de exemplo</MudLink>
+            </span>
+        }
+    </MudAlert>
+}
+
+@code {
+    [Parameter] public bool OnLoginPage { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private DemoStore? _store;
+
+    protected override void OnInitialized() => _store = Services.GetService<DemoStore>();
+
+    private void Reset()
+    {
+        _store!.Reset();
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+}

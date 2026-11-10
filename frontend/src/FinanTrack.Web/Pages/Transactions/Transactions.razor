@@ -22,7 +22,7 @@
 {
     <MudAlert Severity="Severity.Info" Class="mb-4">
         Cadastre uma conta para registrar movimentações.
-        <MudLink Class="ml-1" Href="/configuracoes">Ir para Configurações</MudLink>
+        <MudLink Class="ml-1" Href="configuracoes">Ir para Configurações</MudLink>
     </MudAlert>
 }
 @if (_loadFailed)
@@ -160,7 +160,7 @@
                     @if (context.Item.Kind != TransactionKind.STANDARD)
                     {
                         <MudTooltip Text="Gerenciada na área de cartões">
-                            <MudIconButton Icon="@Icons.Material.Rounded.CreditCard" Size="Size.Small" Href="/cartoes"
+                            <MudIconButton Icon="@Icons.Material.Rounded.CreditCard" Size="Size.Small" Href="cartoes"
                                            aria-label="@($"Abrir cartões: {context.Item.Description}")" />
                         </MudTooltip>
                         return;

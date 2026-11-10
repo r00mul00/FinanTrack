@@ -17,13 +17,13 @@
 else if (_result is { Success: true })
 {
     <MudAlert Severity="Severity.Success" Class="mb-4">E-mail confirmado. Sua conta está ativa.</MudAlert>
-    <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Ir para o login</MudButton>
+    <MudButton Href="login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Ir para o login</MudButton>
 }
 else
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">@(_result?.Message ?? "Link inválido.")</MudAlert>
     <MudText Typo="Typo.body2" Class="mb-2">Para receber um novo link, tente entrar e escolha "Reenviar link".</MudText>
-    <MudLink Href="/login" Typo="Typo.body2">Ir para o login</MudLink>
+    <MudLink Href="login" Typo="Typo.body2">Ir para o login</MudLink>
 }
 
 @code {

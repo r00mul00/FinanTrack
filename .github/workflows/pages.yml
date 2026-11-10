@@ -1,0 +1,58 @@
+name: GitHub Pages (demonstração)
+
+# Publica só o frontend, em modo demonstração (sem backend: dados fictícios no
+# localStorage). A versão completa, com API e banco, continua na main.
+on:
+  push:
+    branches: [demo/github-pages]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Uma publicação por vez; a mais recente não cancela a que já está no ar.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build do frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publicar
+        run: dotnet publish frontend/src/FinanTrack.Web/FinanTrack.Web.csproj -c Release -o publish
+
+      # O Pages serve o app em /<repositório>/; o 404.html devolve o próprio app,
+      # para links diretos (ex.: /FinanTrack/metas) abrirem a rota certa.
+      - name: Ajustar para o GitHub Pages
+        run: |
+          site=publish/wwwroot
+          sed -i 's#<base href="/" />#<base href="/${{ github.event.repository.name }}/" />#' "$site/index.html"
+          grep -q '<base href="/${{ github.event.repository.name }}/" />' "$site/index.html"
+          cp "$site/index.html" "$site/404.html"
+          touch "$site/.nojekyll"
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    name: Publicar no GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

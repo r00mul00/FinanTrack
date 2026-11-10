@@ -1,6 +1,7 @@
 using System.Globalization;
 using FinanTrack.Web;
 using FinanTrack.Web.Authentication;
+using FinanTrack.Web.Demo;
 using FinanTrack.Web.Models;
 using FinanTrack.Web.Services;
 using FinanTrack.Web.State;
@@ -31,12 +32,21 @@ builder.Services.AddTransient<IncludeCredentialsHandler>();
 builder.Services.AddTransient<AuthorizationHandler>();
 
 // Rotas /auth: enviam o cookie e não usam Bearer.
-builder.Services.AddHttpClient(HttpClients.Public, client => client.BaseAddress = apiBaseAddress)
+var publicClient = builder.Services.AddHttpClient(HttpClients.Public, client => client.BaseAddress = apiBaseAddress)
     .AddHttpMessageHandler<IncludeCredentialsHandler>();
 
 // Demais rotas: Bearer e renovação automática da sessão.
-builder.Services.AddHttpClient(HttpClients.Api, client => client.BaseAddress = apiBaseAddress)
+var apiClient = builder.Services.AddHttpClient(HttpClients.Api, client => client.BaseAddress = apiBaseAddress)
     .AddHttpMessageHandler<AuthorizationHandler>();
+
+// Modo demonstração (GitHub Pages): a "API" roda no navegador, com dados no localStorage.
+if (DemoMode.IsEnabled(builder.Configuration))
+{
+    builder.Services.AddSingleton<DemoStore>();
+    builder.Services.AddTransient<DemoApiHandler>();
+    publicClient.ConfigurePrimaryHttpMessageHandler<DemoApiHandler>();
+    apiClient.ConfigurePrimaryHttpMessageHandler<DemoApiHandler>();
+}
 
 builder.Services.AddScoped<PeriodState>();
 builder.Services.AddScoped<DashboardApi>();

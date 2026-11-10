@@ -30,8 +30,8 @@
 </MudForm>
 
 <div class="d-flex justify-space-between mt-4">
-    <MudLink Href="/recuperar-senha" Typo="Typo.body2">Esqueci minha senha</MudLink>
-    <MudLink Href="/cadastro" Typo="Typo.body2">Criar conta</MudLink>
+    <MudLink Href="recuperar-senha" Typo="Typo.body2">Esqueci minha senha</MudLink>
+    <MudLink Href="cadastro" Typo="Typo.body2">Criar conta</MudLink>
 </div>
 
 @code {
@@ -49,11 +49,14 @@
         await Session.InitializeAsync();
         if (Session.CurrentUser is not null)
         {
-            Navigation.NavigateTo(SafeReturnUrl, replace: true);
+            Navigation.NavigateTo(SafeReturnUrl[1..], replace: true);
         }
     }
 
-    /// <summary>Aceita só caminhos internos, para o link de login não redirecionar a outro site.</summary>
+    /// <summary>
+    /// Aceita só caminhos internos, para o link de login não redirecionar a outro site.
+    /// A navegação usa o caminho sem a barra inicial, relativo ao base href (o app pode não estar na raiz).
+    /// </summary>
     private string SafeReturnUrl =>
         !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith('/')
         && !ReturnUrl.StartsWith("//") && !ReturnUrl.StartsWith("/\\")
@@ -80,7 +83,7 @@
 
         if (result.Success)
         {
-            Navigation.NavigateTo(SafeReturnUrl, replace: true);
+            Navigation.NavigateTo(SafeReturnUrl[1..], replace: true);
         }
         else if (result.Code == ApiResult.EmailNotVerified)
         {

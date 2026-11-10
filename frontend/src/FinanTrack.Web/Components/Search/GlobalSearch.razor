@@ -72,10 +72,10 @@
     /// <summary>Uma transação abre a listagem já filtrada pelo termo pesquisado.</summary>
     private string RouteOf(SearchResult item) => item.Type switch
     {
-        SearchResultType.TRANSACTION => $"/transacoes?busca={Uri.EscapeDataString(_lastQuery)}",
-        SearchResultType.CATEGORY => "/categorias",
-        SearchResultType.GOAL => "/metas",
-        SearchResultType.CARD => $"/cartoes/{item.Id}",
-        _ => "/recorrencias"
+        SearchResultType.TRANSACTION => $"transacoes?busca={Uri.EscapeDataString(_lastQuery)}",
+        SearchResultType.CATEGORY => "categorias",
+        SearchResultType.GOAL => "metas",
+        SearchResultType.CARD => $"cartoes/{item.Id}",
+        _ => "recorrencias"
     };
 }

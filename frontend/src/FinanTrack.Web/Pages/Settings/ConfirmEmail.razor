@@ -16,12 +16,12 @@
 else if (_result is { Success: true })
 {
     <MudAlert Severity="Severity.Success" Class="mb-4">E-mail alterado. Use o novo endereço no próximo acesso.</MudAlert>
-    <MudButton Href="/configuracoes" Variant="Variant.Filled" Color="Color.Primary">Voltar para Configurações</MudButton>
+    <MudButton Href="configuracoes" Variant="Variant.Filled" Color="Color.Primary">Voltar para Configurações</MudButton>
 }
 else
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">@(_result?.Message ?? "Link inválido.")</MudAlert>
-    <MudButton Href="/configuracoes" Variant="Variant.Outlined">Voltar para Configurações</MudButton>
+    <MudButton Href="configuracoes" Variant="Variant.Outlined">Voltar para Configurações</MudButton>
 }
 
 @code {

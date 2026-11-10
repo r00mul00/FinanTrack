@@ -42,7 +42,7 @@
                             <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">@Session.CurrentUser?.Email</MudText>
                         </div>
                         <MudDivider />
-                        <MudMenuItem Href="/configuracoes" Icon="@Icons.Material.Rounded.Settings">Configurações</MudMenuItem>
+                        <MudMenuItem Href="configuracoes" Icon="@Icons.Material.Rounded.Settings">Configurações</MudMenuItem>
                         <MudMenuItem OnClick="LogoutAsync" Icon="@Icons.Material.Rounded.Logout">Sair</MudMenuItem>
                     </ChildContent>
                 </MudMenu>
@@ -72,6 +72,7 @@
 
             <MudMainContent>
                 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+                    <FinanTrack.Web.Demo.DemoNotice Class="mb-4" />
                     @Body
                 </MudContainer>
             </MudMainContent>

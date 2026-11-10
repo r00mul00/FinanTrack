@@ -83,3 +83,14 @@ Versões verificadas nas fontes oficiais em 2026-11-08.
 O requisito técnico está definido: um host que execute containers Docker, atendendo SPA e API no mesmo domínio com HTTPS, e um PostgreSQL gerenciado ou em container. **O provedor específico fica para o início da Fase 9**, porque preços e planos gratuitos mudam e nada no código depende dessa escolha.
 
 **Finalidade (2026-11-10):** portfólio e demonstração, priorizando custo zero. Não é para uso real com dados financeiros pessoais. Isso admite plano gratuito com hibernação, primeira resposta mais lenta e limites de banco. Ainda falta definir o provedor e se haverá domínio próprio ou um subdomínio do provedor.
+
+**Decisão (2026-11-10): duas linhas.** A `main` continua sendo o sistema completo (API, banco e Docker), para uso local. A branch `demo/github-pages` publica só o frontend no GitHub Pages, em **modo demonstração**:
+
+- O GitHub Pages serve apenas arquivos estáticos; não há API nem banco.
+- `Demo/DemoApiHandler` substitui a rede nos dois `HttpClient`s e atende as rotas `/api/v1` com o `Demo/DemoStore`, que reproduz as regras de docs/06 (contagem de receitas e despesas, faturas, parcelas, orçamentos, recorrências e metas).
+- Os dados são fictícios, gerados em relação à data de hoje (`Demo/DemoSeed`), e ficam no `localStorage` do visitante. São recriados a cada 30 dias ou pelo link "Restaurar dados de exemplo".
+- O modo é ligado por `Demo:Enabled` em `wwwroot/appsettings.json`; sem essa chave, o mesmo código usa a API real.
+- Fica indisponível na demonstração: troca de senha e de e-mail, exclusão de conta e exportação de relatório em PDF (o CSV funciona).
+- O workflow `pages.yml` publica a cada push na branch, com `<base href>` igual ao nome do repositório e `404.html` como cópia do app, para que links diretos funcionem.
+
+Os links internos do frontend são relativos ao `<base href>` (sem `/` inicial), o que permite servir o app fora da raiz.
