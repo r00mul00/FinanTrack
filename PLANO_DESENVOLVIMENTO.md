@@ -323,7 +323,7 @@ Saída: documentos em `docs/`.
 - [x] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
 - [x] 8.7 Refatorar.
 - [x] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
-- [ ] 8.9 Verificar hover, focus, disabled, loading e feedback visual.
+- [x] 8.9 Verificar hover, focus, disabled, loading e feedback visual.
 
 **Portão de validação:** CI verde e checklists de segurança e responsividade concluídas.
 

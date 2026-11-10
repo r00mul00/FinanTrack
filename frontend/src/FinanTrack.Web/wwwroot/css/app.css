@@ -128,6 +128,17 @@ h1:focus {
     cursor: pointer;
 }
 
+.ft-notification.unread:hover:not(:disabled) {
+    background: var(--mud-palette-action-default-hover);
+    border-left-color: var(--mud-palette-primary-lighten);
+    filter: brightness(1.15);
+}
+
+.ft-notification:disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
 .ft-notification:focus-visible {
     outline: 2px solid var(--mud-palette-primary);
     outline-offset: -2px;
@@ -349,14 +360,29 @@ input:-webkit-autofill:active {
     fill: var(--mud-palette-text-secondary);
 }
 
-/* O SVG tem largura interna fixa: em telas estreitas, rola em vez de encolher os rótulos. */
+/*
+ * O SVG do MudChart desenha numa área fixa de 700x350 e é reduzido para caber na tela.
+ * Em telas estreitas a fonte interna cresce na mesma proporção (o texto continua legível)
+ * e a altura segue o desenho, sem a faixa vazia dos 300px fixos.
+ */
 @media (max-width: 720px) {
-    .ft-chart {
-        overflow-x: auto;
+    .ft-chart .mud-chart {
+        height: auto !important;
     }
 
-    .ft-chart > * {
-        min-width: 620px;
+    .ft-chart svg {
+        height: auto;
+        aspect-ratio: 2 / 1;
+    }
+
+    .ft-chart svg text {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ft-chart svg text {
+        font-size: 22px;
     }
 }
 
@@ -563,6 +589,20 @@ input:-webkit-autofill:active {
     max-width: 480px;
 }
 
+/* Em ~600px a barra fica sem folga: a busca encolhe, a marca não. */
+.ft-appbar-brand {
+    flex-shrink: 0;
+}
+
+.ft-appbar-search {
+    min-width: 0;
+    margin-left: 16px;
+}
+
+.ft-appbar-search .mud-autocomplete {
+    min-width: 0;
+}
+
 /* Cards */
 .ft-card {
     border: 1px solid rgba(166, 168, 188, 0.10);
@@ -608,4 +648,36 @@ input:-webkit-autofill:active {
     margin-left: 12px;
     font-weight: 600;
     color: inherit;
+}
+
+/*
+ * Foco por teclado: o padrão do MudBlazor é só um fundo um pouco mais claro, quase
+ * invisível no tema escuro. :focus-visible não aparece no clique com mouse ou toque.
+ */
+.mud-button-root:focus-visible,
+.mud-nav-link:focus-visible,
+.mud-link:focus-visible,
+.mud-tab:focus-visible,
+.mud-chip:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+/* Itens do menu lateral ocupam a largura toda: o anel fica por dentro. */
+.mud-nav-link:focus-visible {
+    outline-offset: -2px;
+}
+
+/* Quem pediu menos movimento ao sistema não vê deslocamentos nem transições. */
+@media (prefers-reduced-motion: reduce) {
+    .ft-icon-option,
+    .ft-color-option,
+    .ft-card {
+        transition: none;
+    }
+
+    .ft-icon-option:hover,
+    .ft-color-option:hover {
+        transform: none;
+    }
 }

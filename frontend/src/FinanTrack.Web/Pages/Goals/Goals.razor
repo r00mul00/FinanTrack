@@ -71,10 +71,10 @@ else
                             <MudIconButton Icon="@Icons.Material.Rounded.History" Size="Size.Small" aria-label="@($"Histórico de {goal.Name}")" OnClick="() => OpenHistoryAsync(goal)" />
                         </MudTooltip>
                         <MudTooltip Text="Editar">
-                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {goal.Name}")" OnClick="() => OpenGoalDialogAsync(goal)" />
+                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {goal.Name}")" Disabled="@_pending.IsPending(goal.Id)" OnClick="() => OpenGoalDialogAsync(goal)" />
                         </MudTooltip>
                         <MudTooltip Text="Excluir">
-                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {goal.Name}")" OnClick="() => DeleteAsync(goal)" />
+                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {goal.Name}")" Disabled="@_pending.IsPending(goal.Id)" OnClick="() => DeleteAsync(goal)" />
                         </MudTooltip>
                     </div>
 
@@ -98,12 +98,12 @@ else
                     {
                         <div class="d-flex flex-wrap gap-2 mt-3">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
-                                       aria-label="@($"Adicionar valor em {goal.Name}")" OnClick="() => OpenMovementAsync(goal, GoalMovementType.DEPOSIT)">Adicionar</MudButton>
+                                       Disabled="@_pending.IsPending(goal.Id)" aria-label="@($"Adicionar valor em {goal.Name}")" OnClick="() => OpenMovementAsync(goal, GoalMovementType.DEPOSIT)">Adicionar</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Remove"
-                                       Disabled="@(goal.CurrentAmount <= 0)"
+                                       Disabled="@(goal.CurrentAmount <= 0 || _pending.IsPending(goal.Id))"
                                        aria-label="@($"Retirar valor de {goal.Name}")" OnClick="() => OpenMovementAsync(goal, GoalMovementType.WITHDRAWAL)">Retirar</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Rounded.TaskAlt"
-                                       aria-label="@($"Concluir {goal.Name}")" OnClick="() => CompleteAsync(goal)">Concluir</MudButton>
+                                       Disabled="@_pending.IsPending(goal.Id)" aria-label="@($"Concluir {goal.Name}")" OnClick="() => CompleteAsync(goal)">Concluir</MudButton>
                         </div>
                     }
                 </MudPaper>
@@ -123,6 +123,7 @@ else
 
     private List<GoalResponse>? _goals;
     private bool _loadFailed;
+    private readonly PendingActions _pending = new();
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -166,7 +167,9 @@ else
         await Dialogs.ShowAsync<GoalHistoryDialog>($"Histórico: {goal.Name}", parameters, Options);
     }
 
-    private async Task CompleteAsync(GoalResponse goal)
+    private Task CompleteAsync(GoalResponse goal) => _pending.RunAsync(goal.Id, () => CompleteNowAsync(goal));
+
+    private async Task CompleteNowAsync(GoalResponse goal)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Concluir meta", $"Marcar \"{goal.Name}\" como concluída? Depois disso ela não aceitará novas movimentações.",
@@ -178,7 +181,9 @@ else
         await RunAsync(() => GoalsApi.CompleteAsync(goal.Id), "Meta concluída.");
     }
 
-    private async Task DeleteAsync(GoalResponse goal)
+    private Task DeleteAsync(GoalResponse goal) => _pending.RunAsync(goal.Id, () => DeleteNowAsync(goal));
+
+    private async Task DeleteNowAsync(GoalResponse goal)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Excluir meta", $"Excluir a meta \"{goal.Name}\" e todo o histórico dela? Esta ação não pode ser desfeita.",

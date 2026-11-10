@@ -78,12 +78,12 @@ else
                         <MudTooltip Text="Editar limite">
                             <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
                                            aria-label="@($"Editar {budget.CategoryName}")"
-                                           OnClick="() => OpenDialogAsync(budget)" />
+                                           Disabled="@_pending.IsPending(budget.Id)" OnClick="() => OpenDialogAsync(budget)" />
                         </MudTooltip>
                         <MudTooltip Text="Excluir">
                             <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
                                            aria-label="@($"Excluir {budget.CategoryName}")"
-                                           OnClick="() => DeleteAsync(budget)" />
+                                           Disabled="@_pending.IsPending(budget.Id)" OnClick="() => DeleteAsync(budget)" />
                         </MudTooltip>
                     </div>
 
@@ -117,6 +117,7 @@ else
     private BudgetMonthResponse? _data;
     private List<CategoryResponse> _categories = [];
     private bool _loadFailed;
+    private readonly PendingActions _pending = new();
     private int _loadId;
 
     private string MonthKey => _month.ToString("yyyy-MM", CultureInfo.InvariantCulture);
@@ -169,7 +170,10 @@ else
         }
     }
 
-    private async Task DeleteAsync(BudgetResponse budget)
+    private Task DeleteAsync(BudgetResponse budget) =>
+        _pending.RunAsync(budget.Id, () => DeleteNowAsync(budget));
+
+    private async Task DeleteNowAsync(BudgetResponse budget)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Excluir orçamento", $"Excluir o orçamento de \"{budget.CategoryName}\" em {MonthTitle}? As movimentações não serão afetadas.",
