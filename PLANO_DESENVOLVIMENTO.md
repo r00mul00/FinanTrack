@@ -94,7 +94,7 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | D9 | Auditoria | Tabela `audit_log` (acréscimo: não consta na lista de entidades) | O rascunho exige auditoria, mas não define onde registrá-la |
 | D10 | E-mail | Mailpit em desenvolvimento e provedor SMTP em produção | Necessário para validação de e-mail e recuperação de senha |
 | D11 | Biblioteca de PDF | OpenPDF 3.0.5 (LGPL 2.1 / MPL 2.0), escolhida na Fase 7 | API de tabelas pronta e licença compatível; iText exigiria AGPL ou licença paga |
-| D12 | Hospedagem | Avaliar custo e suporte a cookies na Fase 1 | Influencia D5 |
+| D12 | Hospedagem | Decidido na Fase 9: demonstração só do frontend no GitHub Pages; o sistema completo roda localmente | Portfólio a custo zero; ver docs/01-arquitetura.md |
 
 ---
 
@@ -332,13 +332,14 @@ Saída: documentos em `docs/`.
 ## Fase 9 — Deploy
 
 - [x] 9.1 Dockerfiles de produção para backend e frontend.
-- [ ] 9.2 Configuração de ambiente e segredos, fora do repositório.
-- [ ] 9.3 Publicação do banco, da API e do frontend (D5 e D12).
-- [ ] 9.4 CORS, HTTPS e cookies configurados para o domínio real.
-- [ ] 9.5 Pipeline de deploy no GitHub Actions.
-- [ ] 9.6 Testes de produção: cadastro, login, renovação de sessão, CRUD e exportação.
+- [x] 9.2 Configuração de ambiente e segredos, fora do repositório: perfil `prod` validado na inicialização, `.env.prod.example`, `infra/generate-secrets.sh` e varredura de segredos (gitleaks) no CI. Não houve cadastro de segredos em provedor, porque o backend não é publicado (D12).
+- [x] 9.3 Publicação (D12): frontend em modo demonstração no GitHub Pages, em https://r00mul00.github.io/FinanTrack/, a partir da branch `demo/github-pages`. Banco e API não são publicados.
+- [x] 9.4 CORS, HTTPS e cookies para o domínio real: **não se aplica**, porque não há API publicada. O Pages já serve com HTTPS. A configuração continua documentada para quem publicar o sistema completo (D5, `.env.prod.example`).
+- [x] 9.5 Pipeline de deploy no GitHub Actions: `.github/workflows/pages.yml` publica a cada push na `demo/github-pages`.
+- [x] 9.6 Testes na URL pública (2026-11-10), no Chrome: todas as páginas, inclusive por link direto; sair e entrar; retorno à página protegida; efetivar uma transação e manter o dado após recarregar; restaurar os dados de exemplo; busca e exportação CSV. Sem erros no console. Cadastro, troca de senha e PDF ficam fora da demonstração.
+- [ ] 9.7 Executar o sistema completo localmente com `docker compose` e o perfil `prod`, cobrindo cadastro, login, renovação de sessão, CRUD e exportação. Depende do item 0.3b (Docker); hoje, as imagens são testadas só no CI.
 
-**Portão de validação:** fluxo completo funcionando na URL pública.
+**Portão de validação:** demonstração funcionando na URL pública (atendido) e sistema completo validado localmente em containers (pendente: 9.7).
 
 ---
 
