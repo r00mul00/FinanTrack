@@ -54,7 +54,7 @@ Set-Cookie: finantrack_refresh=...; Path=/api/v1/auth; Max-Age=604800; HttpOnly;
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmaW5hbnRyYWNrIiwic3ViIjoi...",
+  "accessToken": "<access token (JWT)>",
   "tokenType": "Bearer",
   "expiresIn": 900
 }
@@ -63,7 +63,7 @@ Set-Cookie: finantrack_refresh=...; Path=/api/v1/auth; Max-Age=604800; HttpOnly;
 O access token vale 15 minutos e vai no cabeçalho `Authorization` das próximas chamadas. O refresh token fica no cookie HttpOnly, restrito a `/api/v1/auth`, e vale 7 dias.
 
 ```bash
-TOKEN=eyJhbGciOiJIUzI1NiJ9...
+TOKEN="<accessToken da resposta do login>"
 AUTH="Authorization: Bearer $TOKEN"
 ```
 
@@ -456,7 +456,7 @@ curl -s -b $JAR -c $JAR -X POST $API/auth/refresh
 ```
 
 ```json
-{ "accessToken": "eyJhbGciOiJIUzI1NiJ9...", "tokenType": "Bearer", "expiresIn": 900 }
+{ "accessToken": "<novo access token>", "tokenType": "Bearer", "expiresIn": 900 }
 ```
 
 O refresh token é rotativo. Cada uso grava um cookie novo e invalida o anterior, e reapresentar um refresh token já usado revoga toda a família de tokens daquela sessão ([docs/05](05-autenticacao.md)).
