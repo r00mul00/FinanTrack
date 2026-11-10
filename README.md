@@ -134,7 +134,7 @@ cd backend
 SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
-A API sobe em http://localhost:8080. No perfil `dev`, o **Swagger UI** fica em http://localhost:8080/swagger-ui.html.
+A API sobe em http://localhost:8080. No perfil `dev`, o **Swagger UI** fica em http://localhost:8080/swagger-ui.html, com descrição, erros possíveis e exemplos de cada operação. Há também um fluxo completo com `curl` em [docs/09](docs/09-exemplos-de-requisicoes.md).
 
 ### 4. Frontend
 
@@ -203,4 +203,5 @@ O GitHub Pages serve apenas arquivos estáticos. Por isso, na demonstração, um
 | [05 — Autenticação](docs/05-autenticacao.md) | JWT, refresh token e fluxos de e-mail |
 | [06 — Regras financeiras](docs/06-regras-financeiras.md) | Cálculos de saldo, faturas, orçamentos e recorrências |
 | [07 — Interface](docs/07-interface.md) | Identidade visual e padrões de tela |
+| [09 — Exemplos de requisições](docs/09-exemplos-de-requisicoes.md) | Fluxo completo com `curl`, do cadastro ao logout, com respostas reais |
 | [Plano de desenvolvimento](PLANO_DESENVOLVIMENTO.md) | Fases, decisões técnicas (D1 a D12) e checklists |

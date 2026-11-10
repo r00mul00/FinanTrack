@@ -4,6 +4,7 @@ import com.finantrack.common.security.CurrentUser;
 import com.finantrack.notification.dto.NotificationListResponse;
 import com.finantrack.notification.dto.NotificationResponse;
 import com.finantrack.notification.service.NotificationService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -28,17 +29,20 @@ public class NotificationController {
         this.currentUser = currentUser;
     }
 
+    @Operation(summary = "Lista as notificações", description = "Paginada, com o total de não lidas. `unread=true` traz só as não lidas.")
     @GetMapping
     public NotificationListResponse list(@RequestParam(defaultValue = "false") boolean unread,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return service.list(currentUser.id(), unread, page, size);
     }
 
+    @Operation(summary = "Marca como lida")
     @PostMapping("/{id}/read")
     public NotificationResponse markRead(@PathVariable UUID id) {
         return service.markRead(id, currentUser.id());
     }
 
+    @Operation(summary = "Marca todas como lidas")
     @PostMapping("/read-all")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void markAllRead() {

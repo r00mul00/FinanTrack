@@ -6,6 +6,8 @@ import com.finantrack.budget.dto.BudgetRequest;
 import com.finantrack.budget.dto.BudgetResponse;
 import com.finantrack.budget.service.BudgetService;
 import com.finantrack.common.security.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.YearMonth;
@@ -36,22 +38,28 @@ public class BudgetController {
         this.currentUser = currentUser;
     }
 
+    @Operation(summary = "Orçamentos do mês", description = "Sem `month` (AAAA-MM), usa o mês corrente. O uso soma as despesas comprometidas, inclusive pendentes; o estado passa a WARNING em 80% e a EXCEEDED acima de 100%.")
     @GetMapping
     public BudgetMonthResponse list(@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
         return service.listMonth(currentUser.id(), month);
     }
 
+    @Operation(summary = "Cria um orçamento", description = "Um por categoria de despesa e mês.")
+    @ApiResponse(responseCode = "409", description = "Já existe orçamento para esta categoria no mês.")
+    @ApiResponse(responseCode = "422", description = "Categoria de receita ou arquivada.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BudgetResponse create(@Valid @RequestBody BudgetRequest request) {
         return service.create(request, currentUser.id());
     }
 
+    @Operation(summary = "Altera o limite", description = "Categoria e mês são fixos; para mudá-los, exclua e crie outro.")
     @PutMapping("/{id}")
     public BudgetResponse updateLimit(@PathVariable UUID id, @Valid @RequestBody BudgetLimitRequest request) {
         return service.updateLimit(id, request, currentUser.id());
     }
 
+    @Operation(summary = "Exclui um orçamento")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id) {

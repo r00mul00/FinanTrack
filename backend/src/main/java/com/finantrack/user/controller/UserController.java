@@ -14,6 +14,8 @@ import com.finantrack.user.service.AccountCredentialsService;
 import com.finantrack.user.service.AccountDeletionService;
 import com.finantrack.user.service.DataExportService;
 import com.finantrack.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -52,16 +54,20 @@ public class UserController {
         this.rateLimiter = rateLimiter;
     }
 
+    @Operation(summary = "Dados do usuário autenticado")
     @GetMapping
     public UserResponse me() {
         return userService.getById(currentUser.id());
     }
 
+    @Operation(summary = "Altera o nome")
     @PatchMapping
     public UserResponse rename(@Valid @RequestBody UpdateProfileRequest request) {
         return userService.rename(currentUser.id(), request.name());
     }
 
+    @Operation(summary = "Troca a senha", description = "Exige a senha atual e encerra todas as sessões, inclusive a atual.")
+    @ApiResponse(responseCode = "422", description = "Senha atual incorreta.")
     @PutMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@Valid @RequestBody ChangePasswordRequest request) {
@@ -69,6 +75,8 @@ public class UserController {
         credentials.changePassword(currentUser.id(), request.currentPassword(), request.newPassword());
     }
 
+    @Operation(summary = "Pede a troca de e-mail", description = "Envia um link de confirmação ao novo endereço; o e-mail só muda depois da confirmação. Um endereço já cadastrado não gera erro nem envio, para não revelar quais e-mails existem.")
+    @ApiResponse(responseCode = "422", description = "Senha atual incorreta, ou o e-mail informado já é o da conta.")
     @PostMapping("/email-change")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void requestEmailChange(@Valid @RequestBody EmailChangeRequest request) {
@@ -76,22 +84,28 @@ public class UserController {
         credentials.requestEmailChange(currentUser.id(), request.newEmail(), request.currentPassword());
     }
 
+    @Operation(summary = "Confirma a troca de e-mail")
+    @ApiResponse(responseCode = "409", description = "O e-mail deixou de estar disponível.")
+    @ApiResponse(responseCode = "422", description = "Token inválido, expirado ou já usado.")
     @PostMapping("/email-change/confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmEmailChange(@Valid @RequestBody ConfirmEmailChangeRequest request) {
         credentials.confirmEmailChange(currentUser.id(), request.token());
     }
 
+    @Operation(summary = "Preferências", description = "Moeda, tema e notificações.")
     @GetMapping("/preferences")
     public PreferencesResponse preferences() {
         return userService.getPreferences(currentUser.id());
     }
 
+    @Operation(summary = "Altera as preferências", description = "Só os campos enviados mudam.")
     @PatchMapping("/preferences")
     public PreferencesResponse updatePreferences(@Valid @RequestBody UpdatePreferencesRequest request) {
         return userService.updatePreferences(currentUser.id(), request);
     }
 
+    @Operation(summary = "Exporta os dados pessoais", description = "Arquivo JSON com todos os dados do usuário (LGPD).")
     @GetMapping("/export")
     public ResponseEntity<Map<String, Object>> export() {
         return ResponseEntity.ok()
@@ -99,6 +113,8 @@ public class UserController {
                 .body(dataExport.export(currentUser.id()));
     }
 
+    @Operation(summary = "Pede a exclusão da conta", description = "Encerra todas as sessões. Os dados são apagados após 30 dias de carência; entrar na conta nesse prazo cancela o pedido.")
+    @ApiResponse(responseCode = "422", description = "Senha atual incorreta.")
     @PostMapping("/deletion-request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void requestDeletion(@Valid @RequestBody DeletionRequest request) {

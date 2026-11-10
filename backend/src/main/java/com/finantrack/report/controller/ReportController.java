@@ -8,6 +8,7 @@ import com.finantrack.report.dto.ReportType;
 import com.finantrack.report.service.ReportExporter;
 import com.finantrack.report.service.ReportService;
 import com.finantrack.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -40,6 +41,7 @@ public class ReportController {
         this.currentUser = currentUser;
     }
 
+    @Operation(summary = "Gera um relatório", description = "Tipos: `monthly` (usa `month`, AAAA-MM), `annual` (usa `year`) e `by-category`, `by-period`, `income-vs-expense`, `evolution` e `by-card` (usam `from` e `to`).")
     @GetMapping("/{type}")
     public ReportResponse get(@PathVariable String type, @RequestParam(required = false) String month,
             @RequestParam(required = false) Integer year,
@@ -48,6 +50,7 @@ public class ReportController {
         return service.generate(currentUser.id(), ReportType.fromSlug(type), new ReportFilter(month, year, from, to));
     }
 
+    @Operation(summary = "Exporta um relatório", description = "`format`: `csv` (separado por ponto e vírgula, com BOM para o Excel) ou `pdf`.")
     @GetMapping("/{type}/export")
     public ResponseEntity<byte[]> export(@PathVariable String type, @RequestParam String format,
             @RequestParam(required = false) String month, @RequestParam(required = false) Integer year,

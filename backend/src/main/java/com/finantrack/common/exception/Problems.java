@@ -15,7 +15,7 @@ public final class Problems {
         return problem;
     }
 
-    static String title(HttpStatusCode status) {
+    public static String title(HttpStatusCode status) {
         return switch (status.value()) {
             case 400 -> "Requisição inválida";
             case 401 -> "Não autenticado";

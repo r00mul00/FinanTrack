@@ -7,6 +7,7 @@ import com.finantrack.dashboard.dto.IncomeVsExpenseResponse;
 import com.finantrack.dashboard.dto.UpcomingDueResponse;
 import com.finantrack.dashboard.service.DashboardService;
 import com.finantrack.dashboard.service.UpcomingDueService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,11 +35,13 @@ public class DashboardController {
     }
 
     /** Relativo a hoje: não usa o período selecionado. */
+    @Operation(summary = "Próximos vencimentos", description = "Contas a pagar pendentes e faturas em aberto, inclusive vencidas, nos próximos 30 dias (até 8 itens).")
     @GetMapping("/upcoming")
     public List<UpcomingDueResponse> upcoming() {
         return upcomingDue.upcoming(currentUser.id());
     }
 
+    @Operation(summary = "Indicadores do período", description = "Saldo atual, receitas, despesas e resultado, com a variação sobre o período anterior. Sem datas, usa o mês corrente.")
     @GetMapping("/summary")
     public DashboardSummaryResponse summary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -46,6 +49,7 @@ public class DashboardController {
         return service.summary(currentUser.id(), from, to);
     }
 
+    @Operation(summary = "Receitas e despesas no tempo", description = "Série diária para até 62 dias; mensal para períodos maiores.")
     @GetMapping("/income-vs-expense")
     public IncomeVsExpenseResponse incomeVsExpense(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -53,6 +57,7 @@ public class DashboardController {
         return service.incomeVsExpense(currentUser.id(), from, to);
     }
 
+    @Operation(summary = "Despesas por categoria", description = "Com o percentual de cada uma no total.")
     @GetMapping("/expenses-by-category")
     public List<CategoryExpenseResponse> expensesByCategory(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
