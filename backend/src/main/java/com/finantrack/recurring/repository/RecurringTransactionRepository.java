@@ -37,6 +37,11 @@ public interface RecurringTransactionRepository extends JpaRepository<RecurringT
     @Query("select r from RecurringTransaction r where r.id = :id")
     Optional<RecurringTransaction> findForUpdate(@Param("id") UUID id);
 
+    /** Mesmo lock do job, restrito ao dono: edição e job nunca trabalham sobre a mesma recorrência juntos. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from RecurringTransaction r where r.id = :id and r.userId = :userId")
+    Optional<RecurringTransaction> findForUpdate(@Param("id") UUID id, @Param("userId") UUID userId);
+
     @Modifying
     @Query("""
             update RecurringTransaction r

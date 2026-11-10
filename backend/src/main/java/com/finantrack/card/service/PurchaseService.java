@@ -15,7 +15,7 @@ import com.finantrack.card.repository.CreditCardPurchaseRepository;
 import com.finantrack.card.repository.CreditCardRepository;
 import com.finantrack.category.entity.Category;
 import com.finantrack.category.entity.CategoryType;
-import com.finantrack.category.repository.CategoryRepository;
+import com.finantrack.category.service.CategoryLookup;
 import com.finantrack.common.dto.PageResponse;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.InvalidParameterException;
@@ -45,7 +45,7 @@ public class PurchaseService {
     private final CreditCardPurchaseRepository purchases;
     private final CreditCardInvoiceRepository invoices;
     private final CreditCardInstallmentRepository installments;
-    private final CategoryRepository categories;
+    private final CategoryLookup categories;
     private final TransactionRepository transactions;
     private final CardLimitCalculator limits;
     private final Clock clock;
@@ -53,7 +53,7 @@ public class PurchaseService {
 
     public PurchaseService(CreditCardRepository cards, CreditCardPurchaseRepository purchases,
             CreditCardInvoiceRepository invoices, CreditCardInstallmentRepository installments,
-            CategoryRepository categories, TransactionRepository transactions, CardLimitCalculator limits,
+            CategoryLookup categories, TransactionRepository transactions, CardLimitCalculator limits,
             Clock clock, AuditRecorder audit) {
         this.audit = audit;
         this.cards = cards;
@@ -84,7 +84,8 @@ public class PurchaseService {
         if (card.isArchived()) {
             throw new BusinessRuleException("Este cartão está arquivado.");
         }
-        Category category = expenseCategory(request.categoryId(), userId);
+        Category category = categories.usable(request.categoryId(), userId, CategoryType.EXPENSE,
+                "Compras só podem usar categorias de despesa.", null);
 
         List<BigDecimal> amounts = InstallmentSplitter.split(request.totalAmount(), request.installments());
         if (amounts.isEmpty()) {
@@ -168,18 +169,6 @@ public class PurchaseService {
         }
         invoices.saveAll(missing);
         return byMonth;
-    }
-
-    private Category expenseCategory(UUID categoryId, UUID userId) {
-        Category category = categories.findByIdAndUserId(categoryId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
-        if (category.getType() != CategoryType.EXPENSE) {
-            throw new BusinessRuleException("Compras só podem usar categorias de despesa.");
-        }
-        if (category.isArchived()) {
-            throw new BusinessRuleException("A categoria selecionada está arquivada.");
-        }
-        return category;
     }
 
     private ResourceNotFoundException cardNotFound() {
