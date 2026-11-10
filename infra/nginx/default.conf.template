@@ -35,7 +35,8 @@ server {
     }
 
     # Arquivos do framework com hash no nome nunca mudam de conteúdo.
-    location ~ ^/_framework/.+\.[a-z0-9]{10}\.[a-z]+$ {
+    # Entre aspas: sem elas, o "{" do quantificador abriria um bloco.
+    location ~ "^/_framework/.+\.[a-z0-9]{10}\.[a-z]+$" {
         add_header Cache-Control "public, max-age=31536000, immutable";
         include /etc/nginx/snippets/security-headers.conf;
     }
