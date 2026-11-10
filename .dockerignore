@@ -1,0 +1,10 @@
+# Contexto da raiz, usado pela imagem do frontend (frontend/ + infra/nginx/).
+.git/
+.github/
+.env
+.env.*
+backend/
+docs/
+**/bin/
+**/obj/
+*.md

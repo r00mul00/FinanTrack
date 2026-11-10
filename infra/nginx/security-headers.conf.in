@@ -1,0 +1,12 @@
+# Cabeçalhos de segurança, incluídos em cada location (add_header não é herdado
+# quando a location define o seu próprio). O build da imagem troca __IMPORTMAP_HASH__
+# pelo hash do <script type="importmap"> que o publish do Blazor grava no index.html.
+#
+# script-src: 'wasm-unsafe-eval' é exigido pelo runtime WebAssembly do Blazor.
+# style-src:  o MudBlazor aplica estilos inline nos componentes.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-__IMPORTMAP_HASH__'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;

@@ -1,0 +1,6 @@
+# Só o necessário para compilar: wrapper, pom e src.
+target/
+.idea/
+.vscode/
+*.iml
+*.log

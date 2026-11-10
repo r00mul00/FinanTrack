@@ -55,3 +55,29 @@ jobs:
         with:
           dotnet-version: "10.0.x"
       - run: dotnet build FinanTrack.Web.sln -c Release
+
+  images:
+    name: Imagens de produção (build e teste de fumaça)
+    runs-on: ubuntu-latest
+    # Valores só para o CI: nenhum segredo real, e o banco é descartado no fim.
+    env:
+      DB_NAME: finantrack
+      DB_USERNAME: finantrack
+      DB_PASSWORD: ci-only-password
+      JWT_SECRET: ci-only-jwt-secret-com-mais-de-32-bytes-0123456789
+      FRONTEND_URL: http://localhost:8080
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
+      MAIL_FROM: no-reply@finantrack.local
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build e subida das imagens
+        run: docker compose -f infra/docker-compose.prod.yml up -d --build
+      - name: Teste de fumaça
+        run: sh infra/smoke-test.sh http://localhost:8080
+      - name: Logs dos contêineres
+        if: failure()
+        run: docker compose -f infra/docker-compose.prod.yml logs --no-color
+      - name: Derruba o ambiente
+        if: always()
+        run: docker compose -f infra/docker-compose.prod.yml down -v

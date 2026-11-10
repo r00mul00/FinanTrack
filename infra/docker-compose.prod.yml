@@ -1,0 +1,53 @@
+# Imagens de produção rodando juntas: banco, API e Nginx (frontend + proxy /api).
+# Serve para validar as imagens localmente e no CI; o deploy no provedor (item 9.3)
+# reaproveita as mesmas imagens e variáveis.
+#
+# Uso, a partir da raiz do repositório:
+#   docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --build
+#   sh infra/smoke-test.sh http://localhost:8080
+name: finantrack-prod
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DB_NAME:?defina DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME:?defina DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ../backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:?defina FRONTEND_URL}
+      MAIL_HOST: ${MAIL_HOST:?defina MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT:?defina MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?defina MAIL_FROM}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Sem porta publicada: só o Nginx fala com a API.
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
