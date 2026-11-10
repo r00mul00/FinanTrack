@@ -59,25 +59,41 @@ jobs:
   images:
     name: Imagens de produção (build e teste de fumaça)
     runs-on: ubuntu-latest
-    # Valores só para o CI: nenhum segredo real, e o banco é descartado no fim.
+    # Segredos gerados pelo próprio script de produção; o restante sobrepõe o
+    # .env.prod só para o CI, e o banco é descartado no fim.
     env:
-      DB_NAME: finantrack
-      DB_USERNAME: finantrack
-      DB_PASSWORD: ci-only-password
-      JWT_SECRET: ci-only-jwt-secret-com-mais-de-32-bytes-0123456789
       FRONTEND_URL: http://localhost:8080
       MAIL_HOST: localhost
       MAIL_PORT: "1025"
       MAIL_FROM: no-reply@finantrack.local
     steps:
       - uses: actions/checkout@v7
+      - name: Gera o .env.prod
+        run: sh infra/generate-secrets.sh
       - name: Build e subida das imagens
-        run: docker compose -f infra/docker-compose.prod.yml up -d --build
+        run: docker compose -f infra/docker-compose.prod.yml --env-file .env.prod up -d --build
       - name: Teste de fumaça
         run: sh infra/smoke-test.sh http://localhost:8080
       - name: Logs dos contêineres
         if: failure()
-        run: docker compose -f infra/docker-compose.prod.yml logs --no-color
+        run: docker compose -f infra/docker-compose.prod.yml --env-file .env.prod logs --no-color
       - name: Derruba o ambiente
         if: always()
-        run: docker compose -f infra/docker-compose.prod.yml down -v
+        run: docker compose -f infra/docker-compose.prod.yml --env-file .env.prod down -v
+
+  secrets:
+    name: Varredura de segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Histórico completo: um segredo apagado num commit continua nos anteriores.
+          fetch-depth: 0
+      # Binário com versão fixa (e não a action): varre o histórico inteiro também em PRs.
+      - name: gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git . --config .gitleaks.toml --redact --verbose --no-banner

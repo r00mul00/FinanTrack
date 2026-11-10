@@ -1,0 +1,13 @@
+# Varredura de segredos (job "secrets" do CI). Usa as regras padrão do gitleaks
+# e libera só valores sabidamente fictícios.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Valores fictícios: testes automatizados, CI e placeholders dos exemplos de .env"
+# Testes usam segredos próprios, que nunca valem em nenhum ambiente real.
+paths = ['''^backend/src/test/''']
+regexes = [
+    '''^ci-only-[A-Za-z0-9-]+$''',
+    '''^defina-[A-Za-z0-9-]+$''',
+]

@@ -3,7 +3,8 @@
 # reaproveita as mesmas imagens e variáveis.
 #
 # Uso, a partir da raiz do repositório:
-#   docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --build
+#   sh infra/generate-secrets.sh        # cria o .env.prod (uma vez só)
+#   docker compose -f infra/docker-compose.prod.yml --env-file .env.prod up -d --build
 #   sh infra/smoke-test.sh http://localhost:8080
 name: finantrack-prod
 
@@ -30,6 +31,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:?defina FRONTEND_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
       MAIL_HOST: ${MAIL_HOST:?defina MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT:?defina MAIL_PORT}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
