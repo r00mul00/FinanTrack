@@ -2,6 +2,8 @@
 
 Base: `/api/v1`. Exceto em **Autenticação**, todas as rotas exigem `Authorization: Bearer <token>` e atuam apenas sobre os dados do usuário do token.
 
+Cada operação está descrita no Swagger UI (`/swagger-ui.html`, perfil `dev`), com os erros possíveis e exemplos. Um fluxo completo com `curl` e respostas reais está em [09 — Exemplos de requisições](09-exemplos-de-requisicoes.md).
+
 **Listagens:** `?page=0&size=20&sort=campo,direcao`, com resposta `{ content, page, size, totalElements, totalPages }`.
 
 | Status | Uso |

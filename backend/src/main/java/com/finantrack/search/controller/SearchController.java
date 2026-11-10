@@ -3,6 +3,7 @@ package com.finantrack.search.controller;
 import com.finantrack.common.security.CurrentUser;
 import com.finantrack.search.dto.SearchResult;
 import com.finantrack.search.service.SearchService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ public class SearchController {
         this.currentUser = currentUser;
     }
 
+    @Operation(summary = "Busca global", description = "Procura em movimentações, categorias, metas, cartões e recorrências, a partir de 2 caracteres, com até 5 itens de cada tipo.")
     @GetMapping
     public List<SearchResult> search(@RequestParam(defaultValue = "") String q) {
         return service.search(currentUser.id(), q);

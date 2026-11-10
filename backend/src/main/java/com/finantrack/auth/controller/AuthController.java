@@ -14,6 +14,9 @@ import com.finantrack.auth.service.RefreshTokenService;
 import com.finantrack.common.exception.InvalidRefreshTokenException;
 import com.finantrack.common.security.RateLimiter;
 import com.finantrack.user.entity.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Autenticação")
+@SecurityRequirements
 public class AuthController {
 
     private final AuthService authService;
@@ -53,6 +57,8 @@ public class AuthController {
         this.cookie = cookie;
     }
 
+    @Operation(summary = "Cadastra um usuário", description = "Cria as categorias padrão e envia o e-mail de verificação. Responde 202 mesmo se o e-mail já estiver cadastrado, para não revelar quais e-mails existem.")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP ou e-mail.")
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
@@ -60,6 +66,10 @@ public class AuthController {
         authService.register(request);
     }
 
+    @Operation(summary = "Entra na conta", description = "Devolve o access token (JWT, 15 minutos) e grava o refresh token no cookie HttpOnly `finantrack_refresh`, válido só para `/api/v1/auth`. Entrar cancela um pedido de exclusão da conta ainda em carência.")
+    @ApiResponse(responseCode = "401", description = "E-mail ou senha incorretos.")
+    @ApiResponse(responseCode = "403", description = "E-mail ainda não verificado (`code`: EMAIL_NOT_VERIFIED).")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP ou e-mail.")
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http,
             @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
@@ -67,6 +77,9 @@ public class AuthController {
         return withCookie(authService.login(request, userAgent));
     }
 
+    @Operation(summary = "Renova a sessão", description = "Troca o refresh token do cookie por um novo (rotação) e emite outro access token. Reapresentar um token já trocado revoga toda a família de sessões, por suspeita de roubo.")
+    @ApiResponse(responseCode = "401", description = "Cookie ausente, expirado ou revogado; o cookie é apagado.")
+    @ApiResponse(responseCode = "409", description = "O token foi trocado há menos de 10 segundos por outra aba; tente de novo em instantes.")
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(
             @CookieValue(value = RefreshTokenCookie.NAME, required = false) String refreshToken,
@@ -74,6 +87,7 @@ public class AuthController {
         return withCookie(refreshTokenService.rotate(refreshToken, userAgent));
     }
 
+    @Operation(summary = "Sai da conta", description = "Revoga a família do refresh token atual e apaga o cookie.")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @CookieValue(value = RefreshTokenCookie.NAME, required = false) String refreshToken) {
@@ -83,6 +97,9 @@ public class AuthController {
                 .build();
     }
 
+    @Operation(summary = "Confirma o e-mail", description = "Valida o token recebido por e-mail (24 horas).")
+    @ApiResponse(responseCode = "422", description = "Token inválido, expirado ou já usado.")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP.")
     @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyEmail(@Valid @RequestBody TokenRequest request, HttpServletRequest http) {
@@ -90,6 +107,8 @@ public class AuthController {
         emailVerificationService.verify(request.token());
     }
 
+    @Operation(summary = "Reenvia o e-mail de verificação", description = "Responde 202 mesmo se o e-mail não existir ou já estiver verificado.")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP ou e-mail.")
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void resendVerification(@Valid @RequestBody EmailRequest request, HttpServletRequest http) {
@@ -97,6 +116,8 @@ public class AuthController {
         emailVerificationService.resend(request.email());
     }
 
+    @Operation(summary = "Pede a redefinição de senha", description = "Envia um link válido por 30 minutos. Responde 202 mesmo se o e-mail não existir.")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP ou e-mail.")
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void forgotPassword(@Valid @RequestBody EmailRequest request, HttpServletRequest http) {
@@ -104,6 +125,9 @@ public class AuthController {
         passwordResetService.requestReset(request.email());
     }
 
+    @Operation(summary = "Redefine a senha", description = "Usa o token do e-mail e encerra todas as sessões do usuário.")
+    @ApiResponse(responseCode = "422", description = "Token inválido, expirado ou já usado.")
+    @ApiResponse(responseCode = "429", description = "Muitas tentativas para este IP.")
     @PostMapping("/reset-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest http) {

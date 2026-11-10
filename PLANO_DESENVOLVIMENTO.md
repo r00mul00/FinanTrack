@@ -348,7 +348,7 @@ Saída: documentos em `docs/`.
 - [x] 10.1 README profissional: descrição do produto e tecnologias, com link para a demonstração.
 - [x] 10.2 Arquitetura, com diagrama de arquitetura (no README e em docs/01) e diagrama do banco (docs/03).
 - [x] 10.3 Instruções de execução, variáveis de ambiente, Docker Compose e deploy, no README.
-- [ ] 10.4 Documentação Swagger e exemplos de requisições.
+- [x] 10.4 Documentação Swagger e exemplos de requisições.
 - [x] 10.5 Prints das telas, usando somente dados fictícios de demonstração (`docs/screenshots/`, tirados da demonstração publicada).
 - [x] 10.6 Descrição dos testes e de como executá-los, no README.
 - [ ] 10.7 Organização do GitHub.
