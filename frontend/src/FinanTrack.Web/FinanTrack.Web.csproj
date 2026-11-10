@@ -15,4 +15,9 @@
     <PackageReference Include="MudBlazor" Version="9.12.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Só serve ao "dotnet run" local (API em localhost:8080); em produção a API está na mesma origem. -->
+    <Content Update="wwwroot\appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
 </Project>

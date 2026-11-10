@@ -1,0 +1,50 @@
+# Ponto de entrada único: entrega o Blazor e encaminha /api para o backend.
+# Para o navegador tudo tem a mesma origem (docs/01-arquitetura.md, decisão D5).
+#
+# A imagem oficial do Nginx troca ${API_UPSTREAM} pelo valor da variável de ambiente
+# ao iniciar; variáveis do próprio Nginx ($uri, $host...) não são afetadas.
+
+# Atrás do proxy HTTPS do provedor, o protocolo original chega em X-Forwarded-Proto.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
+
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # O publish do Blazor já gera os arquivos .gz.
+    gzip_static on;
+    client_max_body_size 1m;
+
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_read_timeout 60s;
+
+        include /etc/nginx/snippets/security-headers.conf;
+    }
+
+    # Arquivos do framework com hash no nome nunca mudam de conteúdo.
+    # Entre aspas: sem elas, o "{" do quantificador abriria um bloco.
+    location ~ "^/_framework/.+\.[a-z0-9]{10}\.[a-z]+$" {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
+    }
+
+    # O restante é revalidado a cada acesso; rotas do SPA caem no index.html.
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+        include /etc/nginx/snippets/security-headers.conf;
+    }
+}

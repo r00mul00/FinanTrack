@@ -331,7 +331,7 @@ Saída: documentos em `docs/`.
 
 ## Fase 9 — Deploy
 
-- [ ] 9.1 Dockerfiles de produção para backend e frontend.
+- [x] 9.1 Dockerfiles de produção para backend e frontend.
 - [ ] 9.2 Configuração de ambiente e segredos, fora do repositório.
 - [ ] 9.3 Publicação do banco, da API e do frontend (D5 e D12).
 - [ ] 9.4 CORS, HTTPS e cookies configurados para o domínio real.

@@ -1,0 +1,4 @@
+# Arquivos executados dentro de containers Linux precisam de LF, mesmo no Windows.
+*.sh text eol=lf
+infra/nginx/* text eol=lf
+**/Dockerfile text eol=lf
