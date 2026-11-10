@@ -82,4 +82,8 @@ Versões verificadas nas fontes oficiais em 2026-11-08.
 
 O requisito técnico está definido: um host que execute containers Docker, atendendo SPA e API no mesmo domínio com HTTPS, e um PostgreSQL gerenciado ou em container. **O provedor específico fica para o início da Fase 9**, porque preços e planos gratuitos mudam e nada no código depende dessa escolha.
 
-**Finalidade (2026-11-10):** portfólio e demonstração, priorizando custo zero. Não é para uso real com dados financeiros pessoais. Isso admite plano gratuito com hibernação, primeira resposta mais lenta e limites de banco. Ainda falta definir o provedor e se haverá domínio próprio ou um subdomínio do provedor.
+**Finalidade (2026-11-10):** portfólio e demonstração, priorizando custo zero. Não é para uso real com dados financeiros pessoais. Isso admite plano gratuito com hibernação, primeira resposta mais lenta e limites de banco.
+
+**Decisão (2026-11-10): duas linhas.** A `main` é o sistema completo (API, banco e Docker), para execução local. A demonstração pública fica no **GitHub Pages**, no subdomínio gratuito (https://r00mul00.github.io/FinanTrack/), publicada a partir da branch `demo/github-pages`. Como o Pages serve só arquivos estáticos, essa branch roda o frontend em modo demonstração: uma camada no navegador substitui a API, reproduz as regras de docs/06 e guarda dados fictícios no `localStorage`. Os detalhes estão no docs/01-arquitetura.md da própria branch.
+
+Consequência: não há deploy público do backend. D5 e os itens de cookies, CORS e domínio continuam válidos para quem executar o sistema completo, mas não há um domínio de produção para configurá-los.
