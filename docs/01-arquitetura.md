@@ -81,3 +81,5 @@ Versões verificadas nas fontes oficiais em 2026-11-08.
 ## Hospedagem (D12)
 
 O requisito técnico está definido: um host que execute containers Docker, atendendo SPA e API no mesmo domínio com HTTPS, e um PostgreSQL gerenciado ou em container. **O provedor específico fica para o início da Fase 9**, porque preços e planos gratuitos mudam e nada no código depende dessa escolha.
+
+**Finalidade (2026-11-10):** portfólio e demonstração, priorizando custo zero. Não é para uso real com dados financeiros pessoais. Isso admite plano gratuito com hibernação, primeira resposta mais lenta e limites de banco. Ainda falta definir o provedor e se haverá domínio próprio ou um subdomínio do provedor.
