@@ -2,8 +2,10 @@ package com.finantrack.recurring.service;
 
 import com.finantrack.account.entity.Account;
 import com.finantrack.account.repository.AccountRepository;
+import com.finantrack.account.service.AccountLookup;
 import com.finantrack.category.entity.Category;
 import com.finantrack.category.repository.CategoryRepository;
+import com.finantrack.category.service.CategoryLookup;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.InvalidParameterException;
@@ -19,7 +21,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,15 +35,20 @@ public class RecurringService {
     private final RecurringTransactionRepository repository;
     private final CategoryRepository categories;
     private final AccountRepository accounts;
+    private final CategoryLookup categoryLookup;
+    private final AccountLookup accountLookup;
     private final RecurringOccurrenceWriter writer;
     private final RecurringMapper mapper;
     private final Clock clock;
 
     public RecurringService(RecurringTransactionRepository repository, CategoryRepository categories,
-            AccountRepository accounts, RecurringOccurrenceWriter writer, RecurringMapper mapper, Clock clock) {
+            AccountRepository accounts, CategoryLookup categoryLookup, AccountLookup accountLookup,
+            RecurringOccurrenceWriter writer, RecurringMapper mapper, Clock clock) {
         this.repository = repository;
         this.categories = categories;
         this.accounts = accounts;
+        this.categoryLookup = categoryLookup;
+        this.accountLookup = accountLookup;
         this.writer = writer;
         this.mapper = mapper;
         this.clock = clock;
@@ -166,19 +172,10 @@ public class RecurringService {
 
     /** Conta ou categoria arquivada só é aceita se a recorrência já a utilizava. */
     private Reference resolve(RecurringRequest request, UUID userId, RecurringTransaction current) {
-        Category category = categories.findByIdAndUserId(request.categoryId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
-        Account account = accounts.findByIdAndUserId(request.accountId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada."));
-        if (!request.type().matches(category.getType())) {
-            throw new BusinessRuleException("A categoria não corresponde ao tipo da recorrência.");
-        }
-        if (category.isArchived() && (current == null || !Objects.equals(current.getCategoryId(), category.getId()))) {
-            throw new BusinessRuleException("A categoria selecionada está arquivada.");
-        }
-        if (account.isArchived() && (current == null || !Objects.equals(current.getAccountId(), account.getId()))) {
-            throw new BusinessRuleException("A conta selecionada está arquivada.");
-        }
+        Category category = categoryLookup.usable(request.categoryId(), userId, request.type().categoryType(),
+                "A categoria não corresponde ao tipo da recorrência.", current == null ? null : current.getCategoryId());
+        Account account = accountLookup.usable(request.accountId(), userId,
+                current == null ? null : current.getAccountId());
         return new Reference(category, account);
     }
 
@@ -198,8 +195,7 @@ public class RecurringService {
     }
 
     private RecurringTransaction findLocked(UUID id, UUID userId) {
-        find(id, userId);
-        return repository.findForUpdate(id).orElseThrow(this::notFound);
+        return repository.findForUpdate(id, userId).orElseThrow(this::notFound);
     }
 
     private ResourceNotFoundException notFound() {

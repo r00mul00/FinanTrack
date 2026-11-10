@@ -1,7 +1,7 @@
 package com.finantrack.card.service;
 
 import com.finantrack.account.entity.Account;
-import com.finantrack.account.repository.AccountRepository;
+import com.finantrack.account.service.AccountLookup;
 import com.finantrack.audit.entity.AuditAction;
 import com.finantrack.audit.entity.AuditEntityType;
 import com.finantrack.audit.service.AuditRecorder;
@@ -34,14 +34,14 @@ public class InvoiceService {
     private final CreditCardRepository cards;
     private final CreditCardInvoiceRepository invoices;
     private final CreditCardInstallmentRepository installments;
-    private final AccountRepository accounts;
+    private final AccountLookup accounts;
     private final TransactionRepository transactions;
     private final CardLimitCalculator limits;
     private final Clock clock;
     private final AuditRecorder audit;
 
     public InvoiceService(CreditCardRepository cards, CreditCardInvoiceRepository invoices,
-            CreditCardInstallmentRepository installments, AccountRepository accounts,
+            CreditCardInstallmentRepository installments, AccountLookup accounts,
             TransactionRepository transactions, CardLimitCalculator limits, Clock clock, AuditRecorder audit) {
         this.audit = audit;
         this.cards = cards;
@@ -79,11 +79,7 @@ public class InvoiceService {
         CreditCard card = cards.findForUpdate(cardId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cartão não encontrado."));
         CreditCardInvoice invoice = findInvoice(card, invoiceId);
-        Account account = accounts.findByIdAndUserId(request.accountId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada."));
-        if (account.isArchived()) {
-            throw new BusinessRuleException("A conta selecionada está arquivada.");
-        }
+        Account account = accounts.usable(request.accountId(), userId, null);
 
         BigDecimal total = totalOf(invoice);
         BigDecimal remaining = total.subtract(invoice.getPaidAmount());

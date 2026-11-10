@@ -22,7 +22,7 @@
 else
 {
     <MudDataGrid T="AccountResponse" Items="_accounts" Loading="_loading" Elevation="0" Hover="true"
-                 HorizontalScrollbar="true" Class="ft-grid">
+                 Class="ft-grid">
         <Columns>
             <PropertyColumn Property="x => x.Name" Title="Nome" />
             <TemplateColumn T="AccountResponse" Title="Tipo" Sortable="false">
@@ -48,12 +48,12 @@ else
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
                                        aria-label="@($"Editar {context.Item.Name}")"
-                                       OnClick="() => OpenDialogAsync(context.Item)" />
+                                       Disabled="@_pending.IsPending(context.Item.Id)" OnClick="() => OpenDialogAsync(context.Item)" />
                     </MudTooltip>
                     <MudTooltip Text="Excluir">
                         <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
                                        aria-label="@($"Excluir {context.Item.Name}")"
-                                       OnClick="() => DeleteAsync(context.Item)" />
+                                       Disabled="@_pending.IsPending(context.Item.Id)" OnClick="() => DeleteAsync(context.Item)" />
                     </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
@@ -76,6 +76,7 @@ else
     private List<AccountResponse> _accounts = [];
     private bool _loading = true;
     private bool _loadFailed;
+    private readonly PendingActions _pending = new();
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -101,7 +102,10 @@ else
         }
     }
 
-    private async Task DeleteAsync(AccountResponse account)
+    private Task DeleteAsync(AccountResponse account) =>
+        _pending.RunAsync(account.Id, () => DeleteNowAsync(account));
+
+    private async Task DeleteNowAsync(AccountResponse account)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Excluir conta", $"Excluir a conta \"{account.Name}\"? Esta ação não pode ser desfeita.",

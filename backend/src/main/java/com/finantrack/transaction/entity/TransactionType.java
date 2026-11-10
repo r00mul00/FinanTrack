@@ -6,7 +6,8 @@ public enum TransactionType {
     INCOME,
     EXPENSE;
 
-    public boolean matches(CategoryType categoryType) {
-        return name().equals(categoryType.name());
+    /** Tipo de categoria que um lançamento deste tipo deve usar. */
+    public CategoryType categoryType() {
+        return CategoryType.valueOf(name());
     }
 }

@@ -60,12 +60,12 @@
                             <MudTooltip Text="Editar">
                                 <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
                                                aria-label="@($"Editar {category.Name}")"
-                                               OnClick="() => OpenDialogAsync(category)" />
+                                               Disabled="@_pending.IsPending(category.Id)" OnClick="() => OpenDialogAsync(category)" />
                             </MudTooltip>
                             <MudTooltip Text="Excluir">
                                 <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
                                                aria-label="@($"Excluir {category.Name}")"
-                                               OnClick="() => DeleteAsync(category)" />
+                                               Disabled="@_pending.IsPending(category.Id)" OnClick="() => DeleteAsync(category)" />
                             </MudTooltip>
                         </div>
                     </MudItem>
@@ -88,6 +88,7 @@
     private int _tab;
     private bool _loading = true;
     private bool _loadFailed;
+    private readonly PendingActions _pending = new();
 
     private CategoryType CurrentType => _tab == 0 ? CategoryType.EXPENSE : CategoryType.INCOME;
 
@@ -119,7 +120,10 @@
         }
     }
 
-    private async Task DeleteAsync(CategoryResponse category)
+    private Task DeleteAsync(CategoryResponse category) =>
+        _pending.RunAsync(category.Id, () => DeleteNowAsync(category));
+
+    private async Task DeleteNowAsync(CategoryResponse category)
     {
         var references = await CategoriesApi.GetUsageAsync(category.Id);
         if (references is null)

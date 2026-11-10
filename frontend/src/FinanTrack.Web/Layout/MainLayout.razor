@@ -9,7 +9,8 @@
 <AuthorizeView>
     <Authorized Context="authState">
         <MudLayout>
-            <MudAppBar Elevation="0" Color="Color.Transparent">
+            @* Opaca (AppbarBackground = fundo da página): o conteúdo rolado não aparece atrás dos botões. *@
+            <MudAppBar Elevation="0">
                 <MudIconButton Icon="@Icons.Material.Rounded.Menu"
                                Color="Color.Inherit"
                                Edge="Edge.Start"
@@ -17,11 +18,11 @@
                                OnClick="ToggleDrawer" />
                 @if (!_drawerOpen)
                 {
-                    <div class="ml-2"><Brand /></div>
+                    <div class="ml-2 ft-appbar-brand"><Brand /></div>
                 }
                 <MudSpacer />
 
-                <div class="d-none d-sm-flex flex-grow-1 justify-end mr-2">
+                <div class="d-none d-sm-flex flex-grow-1 justify-end mr-2 ft-appbar-search">
                     <GlobalSearch />
                 </div>
                 <div class="d-none d-md-flex mr-2">

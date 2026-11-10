@@ -122,25 +122,28 @@ else if (_report is not null)
         else
         {
             <MudTable @key="_report" T="List<string>" Items="_report.Rows" Dense="true" Hover="true" Elevation="0"
-                      HorizontalScrollbar="true" RowsPerPage="50" Breakpoint="Breakpoint.None">
+                      HorizontalScrollbar="true" RowsPerPage="50" Breakpoint="Breakpoint.None" Class="ft-report-table">
                 <HeaderContent>
                     @foreach (var column in _report.Columns)
                     {
                         <MudTh Style="@AlignOf(column.Kind)">@column.Label</MudTh>
                     }
                 </HeaderContent>
+                @* O conteúdo do MudTd é renderizado depois do laço: cada célula precisa da sua cópia do índice. *@
                 <RowTemplate>
                     @for (var i = 0; i < _report.Columns.Count; i++)
                     {
-                        var kind = _report.Columns[i].Kind;
-                        <MudTd Style="@AlignOf(kind)">@ReportDisplay.Format(kind, context[i])</MudTd>
+                        var column = i;
+                        var kind = _report.Columns[column].Kind;
+                        <MudTd Style="@AlignOf(kind)">@ReportDisplay.Format(kind, context[column])</MudTd>
                     }
                 </RowTemplate>
                 <FooterContent>
                     @for (var i = 0; i < _report.Columns.Count; i++)
                     {
-                        var kind = _report.Columns[i].Kind;
-                        <MudTd Style="@($"{AlignOf(kind)} font-weight: 600;")">@ReportDisplay.Format(kind, _report.Totals[i])</MudTd>
+                        var column = i;
+                        var kind = _report.Columns[column].Kind;
+                        <MudTd Style="@($"{AlignOf(kind)} font-weight: 600;")">@ReportDisplay.Format(kind, _report.Totals[column])</MudTd>
                     }
                 </FooterContent>
                 <PagerContent>

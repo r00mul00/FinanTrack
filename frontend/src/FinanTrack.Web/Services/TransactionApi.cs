@@ -13,33 +13,21 @@ public sealed class TransactionApi(IHttpClientFactory httpClientFactory)
     private HttpClient Http => httpClientFactory.CreateClient(HttpClients.Api);
 
     /// <summary>Retorna null se a lista não puder ser carregada.</summary>
-    public async Task<PageResponse<TransactionResponse>?> ListAsync(
-        TransactionFilter filter, int page, int size, string? sort, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var response = await Http.GetAsync(BuildUrl(filter, page, size, sort), cancellationToken);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<PageResponse<TransactionResponse>>(cancellationToken)
-                : null;
-        }
-        catch (HttpRequestException)
-        {
-            return null;
-        }
-    }
+    public Task<PageResponse<TransactionResponse>?> ListAsync(
+        TransactionFilter filter, int page, int size, string? sort, CancellationToken cancellationToken = default) =>
+        Http.GetOrNullAsync<PageResponse<TransactionResponse>>(BuildUrl(filter, page, size, sort), cancellationToken);
 
     public Task<ApiResult> CreateAsync(TransactionRequest request) =>
-        SendAsync(() => Http.PostAsJsonAsync(Path, request));
+        ApiCalls.SendAsync(() => Http.PostAsJsonAsync(Path, request));
 
     public Task<ApiResult> UpdateAsync(Guid id, TransactionRequest request) =>
-        SendAsync(() => Http.PutAsJsonAsync($"{Path}/{id}", request));
+        ApiCalls.SendAsync(() => Http.PutAsJsonAsync($"{Path}/{id}", request));
 
     public Task<ApiResult> CompleteAsync(Guid id) =>
-        SendAsync(() => Http.PostAsync($"{Path}/{id}/complete", null));
+        ApiCalls.SendAsync(() => Http.PostAsync($"{Path}/{id}/complete", null));
 
     public Task<ApiResult> DeleteAsync(Guid id) =>
-        SendAsync(() => Http.DeleteAsync($"{Path}/{id}"));
+        ApiCalls.SendAsync(() => Http.DeleteAsync($"{Path}/{id}"));
 
     private static string BuildUrl(TransactionFilter filter, int page, int size, string? sort)
     {
@@ -59,18 +47,6 @@ public sealed class TransactionApi(IHttpClientFactory httpClientFactory)
         if (value is not null)
         {
             query.Add($"{name}={Uri.EscapeDataString(value)}");
-        }
-    }
-
-    private static async Task<ApiResult> SendAsync(Func<Task<HttpResponseMessage>> send)
-    {
-        try
-        {
-            return await ApiResult.FromResponseAsync(await send());
-        }
-        catch (HttpRequestException)
-        {
-            return ApiResult.NetworkFailure();
         }
     }
 }

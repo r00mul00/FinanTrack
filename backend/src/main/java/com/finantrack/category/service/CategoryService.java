@@ -10,6 +10,7 @@ import com.finantrack.category.repository.CategoryRepository;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.ResourceNotFoundException;
+import com.finantrack.common.exception.UniqueConstraints;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -143,7 +144,10 @@ public class CategoryService {
         try {
             return repository.saveAndFlush(category);
         } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(DUPLICATE_NAME);
+            if (UniqueConstraints.isViolated(ex)) {
+                throw new ConflictException(DUPLICATE_NAME);
+            }
+            throw ex;
         }
     }
 }

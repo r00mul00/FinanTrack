@@ -1,6 +1,7 @@
 package com.finantrack.user.controller;
 
 import com.finantrack.common.security.CurrentUser;
+import com.finantrack.common.security.RateLimiter;
 import com.finantrack.user.dto.ChangePasswordRequest;
 import com.finantrack.user.dto.ConfirmEmailChangeRequest;
 import com.finantrack.user.dto.DeletionRequest;
@@ -38,14 +39,17 @@ public class UserController {
     private final DataExportService dataExport;
     private final AccountDeletionService deletion;
     private final CurrentUser currentUser;
+    private final RateLimiter rateLimiter;
 
     public UserController(UserService userService, AccountCredentialsService credentials,
-            DataExportService dataExport, AccountDeletionService deletion, CurrentUser currentUser) {
+            DataExportService dataExport, AccountDeletionService deletion, CurrentUser currentUser,
+            RateLimiter rateLimiter) {
         this.userService = userService;
         this.credentials = credentials;
         this.dataExport = dataExport;
         this.deletion = deletion;
         this.currentUser = currentUser;
+        this.rateLimiter = rateLimiter;
     }
 
     @GetMapping
@@ -61,12 +65,14 @@ public class UserController {
     @PutMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        confirmingPassword();
         credentials.changePassword(currentUser.id(), request.currentPassword(), request.newPassword());
     }
 
     @PostMapping("/email-change")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void requestEmailChange(@Valid @RequestBody EmailChangeRequest request) {
+        confirmingPassword();
         credentials.requestEmailChange(currentUser.id(), request.newEmail(), request.currentPassword());
     }
 
@@ -96,6 +102,15 @@ public class UserController {
     @PostMapping("/deletion-request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void requestDeletion(@Valid @RequestBody DeletionRequest request) {
+        confirmingPassword();
         deletion.request(currentUser.id(), request.currentPassword());
+    }
+
+    /**
+     * As três rotas que conferem a senha atual compartilham o mesmo limite:
+     * sem ele, um token roubado permitiria tentar senhas à vontade.
+     */
+    private void confirmingPassword() {
+        rateLimiter.checkAccount("confirm-password", currentUser.id());
     }
 }

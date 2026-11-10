@@ -12,7 +12,24 @@ Base: `/api/v1`. Exceto em **Autenticação**, todas as rotas exigem `Authorizat
 | 404 | Inexistente ou pertencente a outro usuário |
 | 409 | Conflito: duplicidade, versão desatualizada, recurso em uso |
 | 422 | Regra de negócio violada, por exemplo limite ou saldo insuficiente |
+| 403 | E-mail não validado no login (`code: EMAIL_NOT_VERIFIED`) |
+| 405 / 415 | Método HTTP ou formato de conteúdo não suportado |
 | 429 | Excesso de tentativas |
+| 500 | Erro inesperado, registrado no log do servidor |
+
+**Erros:** todas as respostas de erro, inclusive a 401, seguem a [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) (`application/problem+json`), com título e mensagem em português e sem nomes internos de classes ou detalhes de implementação.
+
+```json
+{
+  "title": "Requisição inválida",
+  "status": 400,
+  "detail": "Existem campos inválidos.",
+  "instance": "/api/v1/transactions",
+  "errors": { "from": "Valor inválido." }
+}
+```
+
+`errors` só aparece em falhas de validação, com uma mensagem por campo. O frontend exibe a primeira delas ou, na falta, o `detail`.
 
 ## Autenticação
 

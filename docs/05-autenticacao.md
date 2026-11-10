@@ -31,12 +31,15 @@ sequenceDiagram
     A-->>F: Access token + Set-Cookie
     F->>F: Guarda o access token em memória
     F->>A: GET /transactions (Bearer)
-    A->>A: Valida JWT e obtém o userId
+    A->>A: Valida assinatura, prazo e emissor do JWT
+    A->>D: Confere se o usuário existe e não pediu exclusão
     A->>D: Consulta filtrando por user_id
     A-->>F: Dados somente do usuário
 ```
 
 Login sem e-mail validado responde 403 com o código `EMAIL_NOT_VERIFIED`.
+
+O access token de quem excluiu a conta ou pediu a exclusão é recusado com 401, sem esperar os 15 minutos de validade (`ActiveUserValidator`). A conferência só é feita depois que assinatura, prazo e emissor são aprovados, e custa uma consulta por chave primária a cada requisição.
 
 ## Renovação com rotação
 
@@ -78,7 +81,7 @@ sequenceDiagram
 | Validade | Validação: 24 h; recuperação: 30 min |
 | Enumeração | `register`, `forgot-password` e `resend-verification` respondem 202 de forma idêntica, com o e-mail existindo ou não |
 | Efeito da nova senha | Revoga todas as sessões do usuário |
-| Limite de tentativas | Login, cadastro e recuperação, por IP e por e-mail (429) |
+| Limite de tentativas | Login, cadastro e recuperação, por IP e por e-mail (429). Troca de senha, troca de e-mail e pedido de exclusão, por conta, com um contador comum às três rotas (429) |
 
 ## Senhas
 

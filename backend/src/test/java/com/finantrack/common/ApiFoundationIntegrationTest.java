@@ -51,6 +51,15 @@ class ApiFoundationIntegrationTest {
     }
 
     @Test
+    @WithMockUser
+    void responsesCarrySecurityHeaders() throws Exception {
+        mockMvc.perform(get("/probe/not-found"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Cache-Control", containsString("no-store")));
+    }
+
+    @Test
     void swaggerIsClosedOutsideDev() throws Exception {
         mockMvc.perform(get("/v3/api-docs")).andExpect(status().isUnauthorized());
     }

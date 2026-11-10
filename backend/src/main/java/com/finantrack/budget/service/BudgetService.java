@@ -10,9 +10,10 @@ import com.finantrack.budget.repository.BudgetRepository;
 import com.finantrack.category.entity.Category;
 import com.finantrack.category.entity.CategoryType;
 import com.finantrack.category.repository.CategoryRepository;
-import com.finantrack.common.exception.BusinessRuleException;
+import com.finantrack.category.service.CategoryLookup;
 import com.finantrack.common.exception.ConflictException;
 import com.finantrack.common.exception.ResourceNotFoundException;
+import com.finantrack.common.exception.UniqueConstraints;
 import com.finantrack.transaction.repository.TransactionRepository;
 import com.finantrack.transaction.repository.TransactionRepository.CategoryTotal;
 import java.math.BigDecimal;
@@ -38,13 +39,15 @@ public class BudgetService {
 
     private final BudgetRepository repository;
     private final CategoryRepository categories;
+    private final CategoryLookup categoryLookup;
     private final TransactionRepository transactions;
     private final Clock clock;
 
-    public BudgetService(BudgetRepository repository, CategoryRepository categories,
+    public BudgetService(BudgetRepository repository, CategoryRepository categories, CategoryLookup categoryLookup,
             TransactionRepository transactions, Clock clock) {
         this.repository = repository;
         this.categories = categories;
+        this.categoryLookup = categoryLookup;
         this.transactions = transactions;
         this.clock = clock;
     }
@@ -73,14 +76,8 @@ public class BudgetService {
 
     @Transactional
     public BudgetResponse create(BudgetRequest request, UUID userId) {
-        Category category = categories.findByIdAndUserId(request.categoryId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
-        if (category.getType() != CategoryType.EXPENSE) {
-            throw new BusinessRuleException("Orçamentos só podem ser criados para categorias de despesa.");
-        }
-        if (category.isArchived()) {
-            throw new BusinessRuleException("A categoria selecionada está arquivada.");
-        }
+        Category category = categoryLookup.usable(request.categoryId(), userId, CategoryType.EXPENSE,
+                "Orçamentos só podem ser criados para categorias de despesa.", null);
         YearMonth month = YearMonth.parse(request.month());
         if (repository.existsByUserIdAndCategoryIdAndReferenceMonth(userId, category.getId(), month.atDay(1))) {
             throw new ConflictException(DUPLICATE);
@@ -130,7 +127,10 @@ public class BudgetService {
         try {
             return repository.saveAndFlush(budget);
         } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException(DUPLICATE);
+            if (UniqueConstraints.isViolated(ex)) {
+                throw new ConflictException(DUPLICATE);
+            }
+            throw ex;
         }
     }
 }

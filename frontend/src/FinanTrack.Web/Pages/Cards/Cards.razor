@@ -52,10 +52,10 @@ else
                             </MudText>
                         </div>
                         <MudTooltip Text="Editar">
-                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {card.Nickname}")" OnClick="() => OpenDialogAsync(card)" />
+                            <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" aria-label="@($"Editar {card.Nickname}")" Disabled="@_pending.IsPending(card.Id)" OnClick="() => OpenDialogAsync(card)" />
                         </MudTooltip>
                         <MudTooltip Text="Excluir">
-                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {card.Nickname}")" OnClick="() => DeleteAsync(card)" />
+                            <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" aria-label="@($"Excluir {card.Nickname}")" Disabled="@_pending.IsPending(card.Id)" OnClick="() => DeleteAsync(card)" />
                         </MudTooltip>
                     </div>
 
@@ -84,6 +84,7 @@ else
 
     private List<CardResponse>? _cards;
     private bool _loadFailed;
+    private readonly PendingActions _pending = new();
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -104,7 +105,10 @@ else
         }
     }
 
-    private async Task DeleteAsync(CardResponse card)
+    private Task DeleteAsync(CardResponse card) =>
+        _pending.RunAsync(card.Id, () => DeleteNowAsync(card));
+
+    private async Task DeleteNowAsync(CardResponse card)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Excluir cartão", $"Excluir o cartão \"{card.Nickname}\" (final {card.LastFour})? Esta ação não pode ser desfeita.",

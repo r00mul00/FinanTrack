@@ -104,7 +104,8 @@
 
 <MudPaper Elevation="0" Class="ft-card pa-2">
     <MudDataGrid @ref="_grid" T="TransactionResponse" ServerData="LoadServerData" Elevation="0" Hover="true"
-                 HorizontalScrollbar="true" Class="ft-grid" RowsPerPage="20" SortMode="SortMode.Single">
+                 Class="ft-grid" RowsPerPage="20" SortMode="SortMode.Single"
+                 Breakpoint="Breakpoint.Sm">
         <Columns>
             <PropertyColumn Property="x => x.TransactionDate" Title="Data">
                 <CellTemplate>@FormatDate(context.Item.TransactionDate)</CellTemplate>
@@ -154,7 +155,7 @@
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@StatusColor(context.Item.Status)">@context.Item.Status.Label()</MudChip>
                 </CellTemplate>
             </PropertyColumn>
-            <TemplateColumn T="TransactionResponse" Title="Ações" Sortable="false">
+            <TemplateColumn T="TransactionResponse" Title="Ações" Sortable="false" CellStyle="white-space: nowrap;">
                 <CellTemplate>
                     @if (context.Item.Kind != TransactionKind.STANDARD)
                     {
@@ -168,18 +169,18 @@
                     {
                         <MudTooltip Text="Marcar como efetivada">
                             <MudIconButton Icon="@Icons.Material.Rounded.CheckCircle" Size="Size.Small" Color="Color.Success"
-                                           aria-label="@($"Efetivar {context.Item.Description}")"
+                                           aria-label="@($"Efetivar {context.Item.Description}")" Disabled="@_pending.IsPending(context.Item.Id)"
                                            OnClick="() => CompleteAsync(context.Item)" />
                         </MudTooltip>
                     }
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small"
-                                       aria-label="@($"Editar {context.Item.Description}")"
+                                       aria-label="@($"Editar {context.Item.Description}")" Disabled="@_pending.IsPending(context.Item.Id)"
                                        OnClick="() => OpenDialogAsync(context.Item)" />
                     </MudTooltip>
                     <MudTooltip Text="Excluir">
                         <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error"
-                                       aria-label="@($"Excluir {context.Item.Description}")"
+                                       aria-label="@($"Excluir {context.Item.Description}")" Disabled="@_pending.IsPending(context.Item.Id)"
                                        OnClick="() => DeleteAsync(context.Item)" />
                     </MudTooltip>
                 </CellTemplate>
@@ -226,6 +227,7 @@
     private bool _ready;
     private bool _loadFailed;
     private int _visibleCount;
+    private readonly PendingActions _pending = new();
 
     private string? _search;
     private TransactionType? _type;
@@ -391,7 +393,10 @@
         }
     }
 
-    private async Task CompleteAsync(TransactionResponse transaction)
+    private Task CompleteAsync(TransactionResponse transaction) =>
+        _pending.RunAsync(transaction.Id, () => CompleteNowAsync(transaction));
+
+    private async Task CompleteNowAsync(TransactionResponse transaction)
     {
         var result = await TransactionsApi.CompleteAsync(transaction.Id);
         if (result.Success)
@@ -405,7 +410,10 @@
         }
     }
 
-    private async Task DeleteAsync(TransactionResponse transaction)
+    private Task DeleteAsync(TransactionResponse transaction) =>
+        _pending.RunAsync(transaction.Id, () => DeleteNowAsync(transaction));
+
+    private async Task DeleteNowAsync(TransactionResponse transaction)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Excluir movimentação",

@@ -138,7 +138,7 @@ erDiagram
 
 `CHECK` por `kind`: garante as combinações de nulos acima, e que `CARD_INSTALLMENT` e `INVOICE_PAYMENT` sejam sempre `EXPENSE`.
 
-Índices: `(user_id, transaction_date DESC)`, `(user_id, category_id, transaction_date)`, `(user_id, status, due_date)`, `(account_id, status)`.
+Índices: `(user_id, transaction_date DESC)`, `(user_id, category_id, transaction_date)`, `(user_id, status, due_date)`, `(account_id, status)`, `(invoice_id)` e `(category_id)`. O último atende a contagem de uso, a reatribuição e a checagem da FK ao excluir uma categoria, que filtram só por categoria (V13).
 **Único parcial:** `(recurring_id, occurrence_date) WHERE recurring_id IS NOT NULL` — impede duplicidade por ciclo no próprio banco.
 
 > O "cartão opcional" e o "indicador de recorrência" do formulário são derivados: `kind` e a parcela identificam o cartão; `recurring_id` indica a recorrência.

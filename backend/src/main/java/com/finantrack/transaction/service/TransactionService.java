@@ -2,11 +2,13 @@ package com.finantrack.transaction.service;
 
 import com.finantrack.account.entity.Account;
 import com.finantrack.account.repository.AccountRepository;
+import com.finantrack.account.service.AccountLookup;
 import com.finantrack.audit.entity.AuditAction;
 import com.finantrack.audit.entity.AuditEntityType;
 import com.finantrack.audit.service.AuditRecorder;
 import com.finantrack.category.entity.Category;
 import com.finantrack.category.repository.CategoryRepository;
+import com.finantrack.category.service.CategoryLookup;
 import com.finantrack.common.dto.PageResponse;
 import com.finantrack.common.exception.BusinessRuleException;
 import com.finantrack.common.exception.ConflictException;
@@ -37,14 +39,19 @@ public class TransactionService {
     private final TransactionRepository repository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
+    private final CategoryLookup categoryLookup;
+    private final AccountLookup accountLookup;
     private final TransactionMapper mapper;
     private final AuditRecorder audit;
 
     public TransactionService(TransactionRepository repository, AccountRepository accountRepository,
-            CategoryRepository categoryRepository, TransactionMapper mapper, AuditRecorder audit) {
+            CategoryRepository categoryRepository, CategoryLookup categoryLookup, AccountLookup accountLookup,
+            TransactionMapper mapper, AuditRecorder audit) {
         this.repository = repository;
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
+        this.categoryLookup = categoryLookup;
+        this.accountLookup = accountLookup;
         this.mapper = mapper;
         this.audit = audit;
     }
@@ -115,22 +122,10 @@ public class TransactionService {
 
     /** Conta ou categoria arquivada só é aceita se a movimentação já a utilizava. */
     private Reference resolve(TransactionRequest request, UUID userId, Transaction current) {
-        Category category = categoryRepository.findByIdAndUserId(request.categoryId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
-        Account account = accountRepository.findByIdAndUserId(request.accountId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada."));
-
-        if (!request.type().matches(category.getType())) {
-            throw new BusinessRuleException("A categoria não corresponde ao tipo da movimentação.");
-        }
-        boolean sameCategory = current != null && Objects.equals(current.getCategoryId(), category.getId());
-        if (category.isArchived() && !sameCategory) {
-            throw new BusinessRuleException("A categoria selecionada está arquivada.");
-        }
-        boolean sameAccount = current != null && Objects.equals(current.getAccountId(), account.getId());
-        if (account.isArchived() && !sameAccount) {
-            throw new BusinessRuleException("A conta selecionada está arquivada.");
-        }
+        Category category = categoryLookup.usable(request.categoryId(), userId, request.type().categoryType(),
+                "A categoria não corresponde ao tipo da movimentação.", current == null ? null : current.getCategoryId());
+        Account account = accountLookup.usable(request.accountId(), userId,
+                current == null ? null : current.getAccountId());
         return new Reference(category, account);
     }
 

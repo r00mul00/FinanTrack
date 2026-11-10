@@ -441,6 +441,43 @@ class CardIntegrationTest {
         mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void cancelingTwiceIsHarmlessAndCountsOnce() throws Exception {
+        UUID purchaseId = purchaseId("Compra", "300.00", 3, DATE);
+
+        send(delete(URL + "/" + card + "/purchases/" + purchaseId), ana, null).andExpect(status().isNoContent());
+        send(delete(URL + "/" + card + "/purchases/" + purchaseId), ana, null).andExpect(status().isNoContent());
+
+        limit().andExpect(jsonPath("$.availableLimit").value(1000.00));
+        send(get("/api/v1/transactions").param("status", "CANCELED"), ana, null)
+                .andExpect(jsonPath("$.totalElements").value(3));
+    }
+
+    @Test
+    void purchaseOfAnotherCardCannotBeCanceledThroughThisCard() throws Exception {
+        UUID purchaseId = purchaseId("Compra", "100.00", 1, DATE);
+        UUID other = createCard(ana, "500.00");
+
+        send(delete(URL + "/" + other + "/purchases/" + purchaseId), ana, null).andExpect(status().isNotFound());
+
+        limit().andExpect(jsonPath("$.usedLimit").value(100.00));
+    }
+
+    @Test
+    void archivedCategoryIsRejectedForPurchases() throws Exception {
+        jdbcTemplate.update("update categories set archived = true where id = ?", food);
+
+        purchaseWith(food, "10.00", 1).andExpect(status().isUnprocessableContent());
+        limit().andExpect(jsonPath("$.usedLimit").value(0));
+    }
+
+    @Test
+    void purchaseListRejectsInvalidPaging() throws Exception {
+        send(get(URL + "/" + card + "/purchases").param("page", "-1"), ana, null).andExpect(status().isBadRequest());
+        send(get(URL + "/" + card + "/purchases").param("size", "0"), ana, null).andExpect(status().isBadRequest());
+        send(get(URL + "/" + card + "/purchases").param("size", "101"), ana, null).andExpect(status().isBadRequest());
+    }
+
     private ResultActions limit() throws Exception {
         return send(get(URL + "/" + card), ana, null);
     }

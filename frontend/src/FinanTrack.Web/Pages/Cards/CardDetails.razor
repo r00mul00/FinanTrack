@@ -105,7 +105,7 @@ else
                                 {
                                     <MudTooltip Text="Cancelar compra">
                                         <MudIconButton Icon="@Icons.Material.Rounded.Cancel" Size="Size.Small" Color="Color.Error"
-                                                       aria-label="@($"Cancelar compra {purchase.Description}")" OnClick="() => CancelPurchaseAsync(purchase)" />
+                                                       aria-label="@($"Cancelar compra {purchase.Description}")" Disabled="@_pending.IsPending(purchase.Id)" OnClick="() => CancelPurchaseAsync(purchase)" />
                                     </MudTooltip>
                                 }
                             </div>
@@ -132,6 +132,7 @@ else
     private List<AccountResponse> _accounts = [];
     private List<CategoryResponse> _categories = [];
     private bool _notFound;
+    private readonly PendingActions _pending = new();
 
     [Parameter] public Guid Id { get; set; }
 
@@ -199,7 +200,10 @@ else
         await Dialogs.ShowAsync<InvoiceDialog>($"Fatura de {MonthTitle(invoice.ReferenceMonth)}", parameters, Options);
     }
 
-    private async Task CancelPurchaseAsync(PurchaseResponse purchase)
+    private Task CancelPurchaseAsync(PurchaseResponse purchase) =>
+        _pending.RunAsync(purchase.Id, () => CancelPurchaseNowAsync(purchase));
+
+    private async Task CancelPurchaseNowAsync(PurchaseResponse purchase)
     {
         var confirmed = await Dialogs.ShowMessageBoxAsync(
             "Cancelar compra", $"Cancelar \"{purchase.Description}\" de {Money.Format(purchase.TotalAmount)}? O limite será liberado.",

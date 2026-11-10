@@ -18,16 +18,7 @@ public sealed class AuthApi(IHttpClientFactory httpClientFactory)
 
     public Task<ApiResult> ResetPasswordAsync(ResetPasswordRequest request) => PostAsync("reset-password", request);
 
-    private async Task<ApiResult> PostAsync<T>(string path, T body)
-    {
-        try
-        {
-            var http = httpClientFactory.CreateClient(HttpClients.Public);
-            return await ApiResult.FromResponseAsync(await http.PostAsJsonAsync($"api/v1/auth/{path}", body));
-        }
-        catch (HttpRequestException)
-        {
-            return ApiResult.NetworkFailure();
-        }
-    }
+    private Task<ApiResult> PostAsync<T>(string path, T body) =>
+        ApiCalls.SendAsync(() => httpClientFactory.CreateClient(HttpClients.Public)
+            .PostAsJsonAsync($"api/v1/auth/{path}", body));
 }

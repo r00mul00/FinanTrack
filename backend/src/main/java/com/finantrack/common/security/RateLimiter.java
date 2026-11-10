@@ -6,11 +6,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * Janela fixa em memória, por IP e por e-mail. Suficiente para uma única
+ * Janela fixa em memória, por IP, por e-mail e por conta. Suficiente para uma única
  * instância; com várias, os contadores precisariam de um armazenamento comum.
  */
 @Component
@@ -40,6 +41,11 @@ public class RateLimiter {
 
     public void checkEmail(String action, String normalizedEmail) {
         check(action + ":email:" + normalizedEmail, emailLimit);
+    }
+
+    /** Limite por conta para quem já está autenticado; usa o mesmo teto do limite por e-mail. */
+    public void checkAccount(String action, UUID userId) {
+        check(action + ":user:" + userId, emailLimit);
     }
 
     private void check(String key, int limit) {
