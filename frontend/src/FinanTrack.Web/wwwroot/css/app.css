@@ -603,16 +603,11 @@ input:-webkit-autofill:active {
     min-width: 0;
 }
 
-/* Cards */
+/* Cards: nenhum é clicável como um todo, então não reagem ao hover (os botões dentro deles reagem). */
 .ft-card {
     border: 1px solid rgba(166, 168, 188, 0.10);
     border-radius: 16px;
     background-color: var(--mud-palette-surface);
-    transition: border-color 150ms ease, transform 150ms ease;
-}
-
-.ft-card:hover {
-    border-color: rgba(124, 77, 255, 0.45);
 }
 
 .ft-status-dot {
@@ -671,8 +666,7 @@ input:-webkit-autofill:active {
 /* Quem pediu menos movimento ao sistema não vê deslocamentos nem transições. */
 @media (prefers-reduced-motion: reduce) {
     .ft-icon-option,
-    .ft-color-option,
-    .ft-card {
+    .ft-color-option {
         transition: none;
     }
 
