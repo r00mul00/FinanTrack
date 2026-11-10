@@ -321,7 +321,7 @@ Saída: documentos em `docs/`.
 - [x] 8.4 Revisar autorização por usuário em todos os endpoints.
 - [x] 8.5 Analisar performance: consultas N+1, índices e paginação.
 - [x] 8.6 Padronizar respostas de erro, sem expor detalhes internos.
-- [ ] 8.7 Refatorar.
+- [x] 8.7 Refatorar.
 - [ ] 8.8 Verificar responsividade em desktop, notebook, tablet e smartphone.
 - [ ] 8.9 Verificar hover, focus, disabled, loading e feedback visual.
 
