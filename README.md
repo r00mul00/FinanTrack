@@ -206,7 +206,6 @@ O GitHub Pages serve apenas arquivos estáticos. Por isso, na demonstração, um
 | [06 — Regras financeiras](docs/06-regras-financeiras.md) | Cálculos de saldo, faturas, orçamentos e recorrências |
 | [07 — Interface](docs/07-interface.md) | Identidade visual e padrões de tela |
 | [09 — Exemplos de requisições](docs/09-exemplos-de-requisicoes.md) | Fluxo completo com `curl`, do cadastro ao logout, com respostas reais |
-| [10 — Decisões e desafios](docs/10-preparacao-entrevista.md) | Trade-offs, desafios técnicos, limitações e roteiro de apresentação |
 | [Plano de desenvolvimento](PLANO_DESENVOLVIMENTO.md) | Fases, decisões técnicas (D1 a D12) e checklists |
 
 ## Licença

@@ -352,7 +352,7 @@ Saída: documentos em `docs/`.
 - [x] 10.5 Prints das telas, usando somente dados fictícios de demonstração (`docs/screenshots/`, tirados da demonstração publicada).
 - [x] 10.6 Descrição dos testes e de como executá-los, no README.
 - [x] 10.7 Organização do GitHub.
-- [x] 10.8 Preparação para entrevista técnica: decisões, trade-offs e desafios do projeto.
+- [x] 10.8 Preparação para entrevista técnica: decisões, trade-offs e desafios do projeto (material pessoal, mantido fora do repositório).
 
 **Portão de validação:** uma pessoa que não conhece o projeto consegue executá-lo apenas com o README.
 
