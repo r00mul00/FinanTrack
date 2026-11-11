@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/r00mul00/FinanTrack/actions/workflows/ci.yml/badge.svg)](https://github.com/r00mul00/FinanTrack/actions/workflows/ci.yml)
 [![Demonstração](https://github.com/r00mul00/FinanTrack/actions/workflows/pages.yml/badge.svg?branch=demo%2Fgithub-pages)](https://r00mul00.github.io/FinanTrack/)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
 Aplicação web de finanças pessoais: contas, transações, categorias, orçamentos, metas, cartões de crédito com faturas parceladas, contas recorrentes, dashboard e relatórios. O backend é uma API REST em **Java 21 + Spring Boot**, e o frontend é uma SPA em **C# + Blazor WebAssembly**.
 
@@ -25,6 +26,7 @@ A demonstração roda inteira no navegador, com **dados fictícios** que ficam s
 - [Testes](#testes)
 - [Demonstração e sistema completo](#demonstração-e-sistema-completo)
 - [Documentação](#documentação)
+- [Licença](#licença)
 
 ## Funcionalidades
 
@@ -205,3 +207,7 @@ O GitHub Pages serve apenas arquivos estáticos. Por isso, na demonstração, um
 | [07 — Interface](docs/07-interface.md) | Identidade visual e padrões de tela |
 | [09 — Exemplos de requisições](docs/09-exemplos-de-requisicoes.md) | Fluxo completo com `curl`, do cadastro ao logout, com respostas reais |
 | [Plano de desenvolvimento](PLANO_DESENVOLVIMENTO.md) | Fases, decisões técnicas (D1 a D12) e checklists |
+
+## Licença
+
+Distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE).
