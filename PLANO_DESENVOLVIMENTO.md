@@ -24,9 +24,9 @@ Plataforma web de gestão financeira pessoal, em português brasileiro e com BRL
 | 5 | Dashboard | Concluída |
 | 6 | Recursos financeiros | Concluída |
 | 7 | Relatórios e Configurações | Concluída |
-| 8 | Qualidade | Em andamento |
-| 9 | Deploy | Não iniciada |
-| 10 | Portfólio | Não iniciada |
+| 8 | Qualidade | Concluída (8.2, Testcontainers, depende do item 0.3b) |
+| 9 | Deploy | Concluída (9.7, validação local em containers, depende do item 0.3b) |
+| 10 | Portfólio | Itens concluídos; falta o portão: alguém de fora executar o projeto só com o README |
 
 ---
 
@@ -352,7 +352,7 @@ Saída: documentos em `docs/`.
 - [x] 10.5 Prints das telas, usando somente dados fictícios de demonstração (`docs/screenshots/`, tirados da demonstração publicada).
 - [x] 10.6 Descrição dos testes e de como executá-los, no README.
 - [x] 10.7 Organização do GitHub.
-- [ ] 10.8 Preparação para entrevista técnica: decisões, trade-offs e desafios do projeto.
+- [x] 10.8 Preparação para entrevista técnica: decisões, trade-offs e desafios do projeto.
 
 **Portão de validação:** uma pessoa que não conhece o projeto consegue executá-lo apenas com o README.
 
